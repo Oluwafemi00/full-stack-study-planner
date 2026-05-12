@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: study-planner-ai-proxy
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false          # Render will prompt you to enter this manually
+      - key: ALLOWED_ORIGINS
+        sync: false          # Set to your frontend URL after deploying frontend
+      - key: NODE_ENV
+        value: production
