@@ -50,32 +50,8 @@ export default defineConfig({
               expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 30 },
             },
           },
-          {
-            // Cache Transformers.js model files from HuggingFace CDN
-            urlPattern: /^https:\/\/huggingface\.co\/.*/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "transformers-models",
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 * 90, // 90 days
-              },
-            },
-          },
         ],
       },
     }),
   ],
-  optimizeDeps: {
-    // Exclude Transformers.js from pre-bundling —
-    // it uses dynamic imports and WASM that Vite shouldn't touch
-    exclude: ["@xenova/transformers"],
-  },
-  // Allow serving WASM files in dev
-  server: {
-    headers: {
-      "Cross-Origin-Embedder-Policy": "require-corp",
-      "Cross-Origin-Opener-Policy": "same-origin",
-    },
-  },
 });

@@ -2,8 +2,8 @@ import { createContext, useContext, useReducer, useEffect } from "react";
 
 // ── Default subjects ──────────────────────────────────────────────────────
 const DEFAULT_SUBJECTS = [
-  { id: "s1", name: "Mathematics", color: "#6366f1" },
-  { id: "s2", name: "Physics", color: "#06b6d4" },
+  { id: "s1", name: "General Studies", color: "#6366f1" },
+  // { id: "s2", name: "Physics", color: "#06b6d4" },
 ];
 
 const DEFAULT_SETTINGS = {

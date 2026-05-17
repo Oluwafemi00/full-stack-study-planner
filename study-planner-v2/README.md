@@ -1,68 +1,127 @@
-# Study Planner Pro v2
+<!-- # Study Planner AI Proxy
 
-A serious productivity PWA for students, built with React + Vite.
+A lightweight Express server that proxies requests from Study Planner Pro to the Google Gemini API. Your API key lives only here — never exposed to the client.
 
-## Tech stack
-- React 18 + `useReducer` for state
-- Vite + `vite-plugin-pwa` for PWA/offline
-- Zero UI libraries — custom CSS design system
-- `localStorage` persistence (no backend needed)
+## How it works
 
-## Features
-- **Subjects** — colour-coded subject/project grouping
-- **Tasks** — priority, due date/time, subtasks, notes, estimated Pomodoro sessions
-- **Upgraded Pomodoro** — ring timer, short/long breaks, auto-advance, session history, Web Audio API chimes
-- **Dashboard** — streak counter, weekly bar chart, subject breakdown, completion ring
-- **Quick Capture** — `Cmd/Ctrl + K` opens a fast-add modal from anywhere
-- **Views** — Today, All Tasks, per-subject, Dashboard
-- **PWA** — installable on desktop and mobile, works offline
+```
+User browser → your Express proxy (Render) → Google Gemini API
+```
 
-## Setup
+The frontend calls `/api/ai` on this server. The server adds your secret API key and forwards to Gemini. Users get AI features with zero setup on their end.
+
+## Local development
 
 ```bash
 # 1. Install dependencies
 npm install
 
-# 2. Start dev server
-npm run dev
+# 2. Create your .env file
+cp .env.example .env
 
-# 3. Build for production
-npm run build
+# 3. Add your Gemini API key to .env
+# Get one free at https://aistudio.google.com/app/apikey
+# It looks like: AIzaSy...
 
-# 4. Preview production build
-npm run preview
+# 4. Start the proxy
+npm run dev    # with nodemon (auto-restart)
+# or
+npm start      # plain node
+
+# Server runs at http://localhost:3001
+# Test it: curl http://localhost:3001/health
 ```
 
-## Project structure
+## Deploy to Render (free tier)
+
+### Option 1 — GitHub (recommended)
+
+1. Push this folder to a GitHub repo (can be the same repo as the frontend, or separate)
+2. Go to **render.com** → New → Web Service
+3. Connect your GitHub repo
+4. Render auto-detects Node.js. Set:
+   - **Build command:** `npm install`
+   - **Start command:** `npm start`
+5. Add environment variables:
+   - `GEMINI_API_KEY` → your key from aistudio.google.com
+   - `ALLOWED_ORIGINS` → your frontend URL (e.g. `https://yourapp.netlify.app`)
+6. Click **Deploy**
+7. Render gives you a URL like `https://study-planner-ai-proxy.onrender.com`
+
+### Option 2 — render.yaml (one-click)
+
+The `render.yaml` file in this repo enables one-click deploy:
+
+1. Fork/push to GitHub
+2. Go to render.com → New → Blueprint
+3. Connect repo — Render reads `render.yaml` automatically
+4. Set `GEMINI_API_KEY` and `ALLOWED_ORIGINS` when prompted
+
+## After deploying
+
+Update your frontend `.env.production`:
 
 ```
-src/
-├── components/
-│   ├── Dashboard.jsx       # Stats, charts, session log
-│   ├── Pomodoro.jsx        # Upgraded timer with ring + history
-│   ├── QuickCapture.jsx    # Cmd+K modal
-│   ├── Sidebar.jsx         # Navigation + subject list
-│   ├── SubjectManager.jsx  # Add/delete subjects
-│   ├── TaskForm.jsx        # Add task (with subtasks, notes, est. sessions)
-│   ├── TaskItem.jsx        # Individual task card
-│   └── TaskList.jsx        # List with filter, sort, drag-and-drop
-├── context/
-│   └── AppContext.jsx      # Global state (useReducer) + localStorage sync
-├── utils/
-│   └── helpers.js          # Date, stats, sort helpers
-├── App.jsx                 # View router
-├── index.css               # Full design system
-└── main.jsx                # Entry point
+VITE_AI_PROXY_URL=https://your-proxy-name.onrender.com
 ```
 
-## Deploying to GitHub Pages
+Then rebuild and redeploy the frontend.
 
-```bash
-# Add to vite.config.js: base: '/your-repo-name/'
-npm run build
-# Deploy the dist/ folder
+## ⚠️ Important: ALLOWED_ORIGINS
+
+In production, always set `ALLOWED_ORIGINS` to your exact frontend URL:
+
+```
+ALLOWED_ORIGINS=https://yourapp.netlify.app
 ```
 
-## Upgrading from v1
-Your v1 data (localStorage key `studyTasks`) is separate from v2 (`spp_v2`).
-V2 starts fresh — v1 data is not migrated automatically.
+This prevents other websites from using your proxy (and your API quota).
+
+During development, `ALLOWED_ORIGINS=*` is fine.
+
+## Render free tier notes
+
+- Free services spin down after 15 minutes of inactivity
+- First request after spin-down takes ~30 seconds (cold start)
+- 750 free hours/month — enough for one always-on service
+- Upgrade to Starter ($7/month) to eliminate cold starts
+
+## Endpoints
+
+| Method | Path    | Description                   |
+| ------ | ------- | ----------------------------- |
+| GET    | /health | Health check — returns status |
+| POST   | /api/ai | Main AI proxy endpoint        |
+
+### POST /api/ai
+
+Request body:
+
+```json
+{
+  "prompt": "Your prompt here",
+  "maxTokens": 1024,
+  "temperature": 0.4
+}
+```
+
+Response:
+
+```json
+{
+  "result": "AI response text here"
+}
+```
+
+Error response:
+
+```json
+{
+  "error": "ERROR_CODE",
+  "message": "Human readable message"
+}
+```
+
+## Rate limiting
+
+20 requests per IP per minute. Adjust in `server.js` if needed. -->

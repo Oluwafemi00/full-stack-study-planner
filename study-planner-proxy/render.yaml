@@ -6,8 +6,22 @@ services:
     startCommand: npm start
     envVars:
       - key: GEMINI_API_KEY
-        sync: false          # Render will prompt you to enter this manually
+        sync: false # Enter manually in Render dashboard
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PRICE_ID
+        sync: false
+      - key: TOKEN_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        sync: false # e.g. https://your-app.netlify.app
       - key: ALLOWED_ORIGINS
-        sync: false          # Set to your frontend URL after deploying frontend
+        sync: false # Same as FRONTEND_URL in production
       - key: NODE_ENV
         value: production

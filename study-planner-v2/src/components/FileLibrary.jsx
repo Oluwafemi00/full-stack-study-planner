@@ -1,126 +1,130 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from "react";
 import {
-  getAllFiles, saveFile, deleteFile,
-  readFileAsArrayBuffer, formatFileSize
-} from '../utils/fileStorage'
-import { getApiKey } from '../utils/gemini'
+  getAllFiles,
+  saveFile,
+  deleteFile,
+  readFileAsArrayBuffer,
+  formatFileSize,
+} from "../utils/fileStorage";
+import { getApiKey } from "../utils/gemini";
 
-const ACCEPTED = '.pdf,.docx,.doc'
-const MAX_SIZE  = 20 * 1024 * 1024 // 20 MB
+const ACCEPTED = ".pdf,.docx,.doc";
+const MAX_SIZE = 20 * 1024 * 1024; // 20 MB
 
 export default function FileLibrary({ onOpenFile }) {
-  const [files,    setFiles]    = useState([])
-  const [loading,  setLoading]  = useState(true)
-  const [uploading,setUploading]= useState(false)
-  const [error,    setError]    = useState('')
-  const [search,   setSearch]   = useState('')
-  const inputRef = useRef()
+  const [files, setFiles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const inputRef = useRef();
 
-  const apiKeySet = !!getApiKey()
+  const apiKeySet = !!getApiKey();
 
   useEffect(() => {
-    loadFiles()
-  }, [])
+    loadFiles();
+  }, []);
 
   async function loadFiles() {
     try {
-      const all = await getAllFiles()
-      setFiles(all.sort((a, b) => b.uploadedAt - a.uploadedAt))
+      const all = await getAllFiles();
+      setFiles(all.sort((a, b) => b.uploadedAt - a.uploadedAt));
     } catch {
-      setError('Could not load file library.')
+      setError("Could not load file library.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   async function handleUpload(e) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    inputRef.current.value = ''
+    const file = e.target.files?.[0];
+    if (!file) return;
+    inputRef.current.value = "";
 
     if (file.size > MAX_SIZE) {
-      setError('File too large. Maximum size is 20 MB.')
-      return
+      setError("File too large. Maximum size is 20 MB.");
+      return;
     }
 
-    const ext = file.name.split('.').pop().toLowerCase()
-    if (!['pdf', 'docx', 'doc'].includes(ext)) {
-      setError('Only PDF and DOCX files are supported.')
-      return
+    const ext = file.name.split(".").pop().toLowerCase();
+    if (!["pdf", "docx", "doc"].includes(ext)) {
+      setError("Only PDF and DOCX files are supported.");
+      return;
     }
 
-    setUploading(true)
-    setError('')
+    setUploading(true);
+    setError("");
 
     try {
-      const buffer = await readFileAsArrayBuffer(file)
+      const buffer = await readFileAsArrayBuffer(file);
       const record = {
-        id:         Date.now(),
-        name:       file.name,
-        type:       ext,
-        size:       file.size,
+        id: Date.now(),
+        name: file.name,
+        type: ext,
+        size: file.size,
         uploadedAt: Date.now(),
-        data:       buffer,
-      }
-      await saveFile(record)
-      setFiles(prev => [record, ...prev])
+        data: buffer,
+      };
+      await saveFile(record);
+      setFiles((prev) => [record, ...prev]);
     } catch {
-      setError('Upload failed. Please try again.')
+      setError("Upload failed. Please try again.");
     } finally {
-      setUploading(false)
+      setUploading(false);
     }
   }
 
   async function handleDelete(id, name) {
-    if (!window.confirm(`Delete "${name}"?`)) return
-    await deleteFile(id)
-    setFiles(prev => prev.filter(f => f.id !== id))
+    if (!window.confirm(`Delete "${name}"?`)) return;
+    await deleteFile(id);
+    setFiles((prev) => prev.filter((f) => f.id !== id));
   }
 
-  const filtered = files.filter(f =>
-    f.name.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = files.filter((f) =>
+    f.name.toLowerCase().includes(search.toLowerCase()),
+  );
 
-  const typeIcon  = (type) => type === 'pdf' ? '📄' : '📝'
-  const typeColor = (type) => type === 'pdf' ? 'var(--red)' : 'var(--blue)'
+  const typeIcon = (type) => (type === "pdf" ? "📄" : "📝");
+  const typeColor = (type) => (type === "pdf" ? "var(--red)" : "var(--blue)");
 
   return (
     <div className="file-library">
-
       {/* Header */}
       <div className="fl-header">
         <div>
           <h2 className="list-title">Study Library</h2>
-          <p className="dashboard-sub">Upload PDFs and DOCX files to read and study with AI assistance.</p>
+          <p className="dashboard-sub">
+            Upload PDFs and DOCX files to read and study with AI assistance.
+          </p>
         </div>
         <button
           className="btn-primary fl-upload-btn"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
         >
-          {uploading ? 'Uploading…' : '+ Upload File'}
+          {uploading ? "Uploading…" : "+ Upload File"}
         </button>
         <input
           ref={inputRef}
           type="file"
           accept={ACCEPTED}
           onChange={handleUpload}
-          style={{ display: 'none' }}
+          style={{ display: "none" }}
         />
       </div>
 
       {/* AI key notice */}
-      {!apiKeySet && (
+      {/* {!apiKeySet && (
         <div className="fl-notice">
           <span className="fl-notice-icon">⚡</span>
           <span>Add your Gemini API key in <strong>Settings</strong> to unlock AI study features for your documents.</span>
         </div>
-      )}
+      )} */}
 
       {error && (
         <div className="fl-error">
           <span>{error}</span>
-          <button onClick={() => setError('')}>✕</button>
+          <button onClick={() => setError("")}>✕</button>
         </div>
       )}
 
@@ -131,7 +135,7 @@ export default function FileLibrary({ onOpenFile }) {
             className="fl-search"
             placeholder="Search files…"
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
           />
         </div>
       )}
@@ -145,39 +149,68 @@ export default function FileLibrary({ onOpenFile }) {
       ) : filtered.length === 0 ? (
         <div className="fl-empty" onClick={() => inputRef.current?.click()}>
           <div className="fl-empty-icon">📂</div>
-          <p>{search ? 'No files match your search.' : 'No files yet — click to upload your first document.'}</p>
-          {!search && <span className="fl-empty-hint">Supports PDF and DOCX · Max 20 MB</span>}
+          <p>
+            {search
+              ? "No files match your search."
+              : "No files yet — click to upload your first document."}
+          </p>
+          {!search && (
+            <span className="fl-empty-hint">
+              Supports PDF and DOCX · Max 20 MB
+            </span>
+          )}
         </div>
       ) : (
         <div className="fl-grid">
-          {filtered.map(file => (
+          {filtered.map((file) => (
             <div key={file.id} className="fl-card">
               <div className="fl-card-top" onClick={() => onOpenFile(file)}>
-                <span className="fl-type-icon" style={{ color: typeColor(file.type) }}>
+                <span
+                  className="fl-type-icon"
+                  style={{ color: typeColor(file.type) }}
+                >
                   {typeIcon(file.type)}
                 </span>
                 <span
                   className="fl-type-badge"
-                  style={{ color: typeColor(file.type), borderColor: typeColor(file.type) + '44', background: typeColor(file.type) + '11' }}
+                  style={{
+                    color: typeColor(file.type),
+                    borderColor: typeColor(file.type) + "44",
+                    background: typeColor(file.type) + "11",
+                  }}
                 >
                   {file.type.toUpperCase()}
                 </span>
               </div>
 
               <div className="fl-card-body" onClick={() => onOpenFile(file)}>
-                <p className="fl-filename" title={file.name}>{file.name}</p>
+                <p className="fl-filename" title={file.name}>
+                  {file.name}
+                </p>
                 <div className="fl-meta">
                   <span>{formatFileSize(file.size)}</span>
                   <span>·</span>
-                  <span>{new Date(file.uploadedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                  <span>
+                    {new Date(file.uploadedAt).toLocaleDateString("en-GB", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </span>
                 </div>
               </div>
 
               <div className="fl-card-footer">
-                <button className="fl-open-btn" onClick={() => onOpenFile(file)}>
-                  Open {apiKeySet ? '+ Study' : ''}
+                <button
+                  className="fl-open-btn"
+                  onClick={() => onOpenFile(file)}
+                >
+                  Open {apiKeySet ? "+ Study" : ""}
                 </button>
-                <button className="fl-delete-btn" onClick={() => handleDelete(file.id, file.name)}>
+                <button
+                  className="fl-delete-btn"
+                  onClick={() => handleDelete(file.id, file.name)}
+                >
                   ✕
                 </button>
               </div>
@@ -186,5 +219,5 @@ export default function FileLibrary({ onOpenFile }) {
         </div>
       )}
     </div>
-  )
+  );
 }
