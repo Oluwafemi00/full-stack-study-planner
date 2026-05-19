@@ -10,6 +10,7 @@ import StudyAssistant from "./components/StudyAssistant";
 import UpdateToast from "./components/UpdateToast";
 import { isToday } from "./utils/helpers";
 import { verifySession } from "./utils/subscription";
+import { initGA, trackPage } from "./utils/analytics";
 
 const VIEW_LABELS = {
   today: "Today",
@@ -25,24 +26,31 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pomodoroOpen, setPomodoroOpen] = useState(false);
 
-  // Handle Stripe redirect back to app after checkout
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const sessionId = params.get("session_id");
-    const subscribed = params.get("subscribed");
+    initGA();
 
-    if (sessionId && subscribed === "true") {
-      // Clean URL so refresh doesn't re-trigger
-      window.history.replaceState({}, "", window.location.pathname);
-      // Verify the session with the proxy — stores token in localStorage
-      verifySession(sessionId).catch(console.error);
-    }
+    trackPage("app_open");
   }, []);
+
+  useEffect(() => {
+    trackPage(view);
+  }, [view]);
 
   const viewLabel = view.startsWith("subject:")
     ? (subjects.find((s) => s.id === view.replace("subject:", ""))?.name ??
       "Subject")
     : (VIEW_LABELS[view] ?? "Today");
+
+  useEffect(() => {
+    if (view.startsWith("subject:")) {
+      const subjectId = view.replace("subject:", "");
+      const subject = subjects.find((s) => s.id === subjectId);
+
+      trackPage(`subject_${subject?.name || "unknown"}`);
+    } else {
+      trackPage(view);
+    }
+  }, [view, subjects]);
 
   const renderMain = () => {
     if (view === "today")
