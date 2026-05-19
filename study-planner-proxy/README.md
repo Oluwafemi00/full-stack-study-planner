@@ -1,71 +1,51 @@
-# Study Planner Pro v2
+# Study Planner AI Proxy
 
-A serious productivity PWA for students, built with React + Vite.
+A lightweight Express server that proxies requests from Study Planner Pro to the Google Gemini API. API key lives only here — never exposed to the client.
 
-## Tech stack
-
-- React 18 + `useReducer` for state
-- Vite + `vite-plugin-pwa` for PWA/offline
-- Zero UI libraries — custom CSS design system
-- `localStorage` persistence (no backend needed)
-
-## Features
-
-- **Subjects** — colour-coded subject/project grouping
-- **Tasks** — priority, due date/time, subtasks, notes, estimated Pomodoro sessions
-- **Upgraded Pomodoro** — ring timer, short/long breaks, auto-advance, session history, Web Audio API chimes
-- **Dashboard** — streak counter, weekly bar chart, subject breakdown, completion ring
-- **Quick Capture** — `Cmd/Ctrl + K` opens a fast-add modal from anywhere
-- **Views** — Today, All Tasks, per-subject, Dashboard
-- **PWA** — installable on desktop and mobile, works offline
-
-## Setup
-
-```bash
-# 1. Install dependencies
-npm install
-
-# 2. Start dev server
-npm run dev
-
-# 3. Build for production
-npm run build
-
-# 4. Preview production build
-npm run preview
-```
-
-## Project structure
+## How it works
 
 ```
-src/
-├── components/
-│   ├── Dashboard.jsx       # Stats, charts, session log
-│   ├── Pomodoro.jsx        # Upgraded timer with ring + history
-│   ├── QuickCapture.jsx    # Cmd+K modal
-│   ├── Sidebar.jsx         # Navigation + subject list
-│   ├── SubjectManager.jsx  # Add/delete subjects
-│   ├── TaskForm.jsx        # Add task (with subtasks, notes, est. sessions)
-│   ├── TaskItem.jsx        # Individual task card
-│   └── TaskList.jsx        # List with filter, sort, drag-and-drop
-├── context/
-│   └── AppContext.jsx      # Global state (useReducer) + localStorage sync
-├── utils/
-│   └── helpers.js          # Date, stats, sort helpers
-├── App.jsx                 # View router
-├── index.css               # Full design system
-└── main.jsx                # Entry point
+User browser → Express proxy  → Google Gemini API
 ```
 
-## Deploying to GitHub Pages
+The frontend calls `/api/ai` on this server. The server adds secret API key and forwards to Gemini. Users get AI features with zero setup on their end.
 
-```bash
-# Add to vite.config.js: base: '/your-repo-name/'
-npm run build
-# Deploy the dist/ folder
+## Endpoints
+
+| Method | Path    | Description                   |
+| ------ | ------- | ----------------------------- |
+| GET    | /health | Health check — returns status |
+| POST   | /api/ai | Main AI proxy endpoint        |
+
+### POST /api/ai
+
+Request body:
+
+```json
+{
+  "prompt": "Your prompt here",
+  "maxTokens": 1024,
+  "temperature": 0.4
+}
 ```
 
-## Upgrading from v1
+Response:
 
-Your v1 data (localStorage key `studyTasks`) is separate from v2 (`spp_v2`).
-V2 starts fresh — v1 data is not migrated automatically.
+```json
+{
+  "result": "AI response text here"
+}
+```
+
+Error response:
+
+```json
+{
+  "error": "ERROR_CODE",
+  "message": "Human readable message"
+}
+```
+
+## Rate limiting
+
+20 requests per IP per minute.
