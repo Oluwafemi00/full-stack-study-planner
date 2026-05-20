@@ -1,13 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import AiAssistant from "./AiAssistant";
 
-// Load PDF.js from CDN
 const PDFJS_URL =
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
 const PDFJS_WORKER =
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-
-// Load Mammoth.js from CDN
 const MAMMOTH_URL =
   "https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js";
 
@@ -25,7 +22,6 @@ function loadScript(src) {
   });
 }
 
-// Poll until a window global is available after script load
 function waitForGlobal(name, timeout = 8000) {
   return new Promise((resolve, reject) => {
     if (window[name]) {
@@ -47,25 +43,25 @@ function waitForGlobal(name, timeout = 8000) {
 
 export default function FileViewer({ file, onBack }) {
   const [docText, setDocText] = useState("");
-  const [renderStatus, setRenderStatus] = useState("loading"); // 'loading' | 'ready' | 'error'
+  const [renderStatus, setRenderStatus] = useState("loading");
   const [errorMsg, setErrorMsg] = useState("");
   const [selectedText, setSelectedText] = useState("");
   const [selectionPos, setSelectionPos] = useState(null);
-  const [aiPanelOpen, setAiPanelOpen] = useState(true);
+  // AI panel: closed by default on mobile, open on desktop
+  const [aiPanelOpen, setAiPanelOpen] = useState(() => window.innerWidth > 768);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
 
   const viewerRef = useRef();
   const pdfDocRef = useRef();
 
-  // Render document on mount
   useEffect(() => {
     if (!file) return;
     if (file.type === "pdf") renderPDF();
     else renderDOCX();
   }, [file]);
 
-  // Text selection handler
+  // Text selection
   useEffect(() => {
     const handler = () => {
       const sel = window.getSelection();
@@ -76,8 +72,7 @@ export default function FileViewer({ file, onBack }) {
         viewerRef.current?.contains(sel.anchorNode)
       ) {
         setSelectedText(text);
-        const range = sel.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
+        const rect = sel.getRangeAt(0).getBoundingClientRect();
         setSelectionPos({
           top: rect.top + window.scrollY,
           left: rect.left + rect.width / 2,
@@ -95,23 +90,20 @@ export default function FileViewer({ file, onBack }) {
     };
   }, []);
 
-  // ── PDF rendering ────────────────────────────────────────────────────
+  // ── PDF rendering ───────────────────────────────────────────────────
   async function renderPDF() {
     try {
       await loadScript(PDFJS_URL);
-      // Wait for pdfjsLib to be available on window (avoids race condition)
       const pdfjs = await waitForGlobal("pdfjsLib");
       pdfjs.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
 
-      // Copy the ArrayBuffer — PDF.js detaches the original, making it
-      // unusable for future renders or re-opens
       const bufferCopy = file.data.slice(0);
-      const typedArray = new Uint8Array(bufferCopy);
-      const pdf = await pdfjs.getDocument({ data: typedArray }).promise;
+      const pdf = await pdfjs.getDocument({ data: new Uint8Array(bufferCopy) })
+        .promise;
       pdfDocRef.current = pdf;
       setTotalPages(pdf.numPages);
 
-      // Extract all text for AI
+      // Extract text for AI (up to 30 pages)
       let fullText = "";
       for (let i = 1; i <= Math.min(pdf.numPages, 30); i++) {
         const page = await pdf.getPage(i);
@@ -120,7 +112,6 @@ export default function FileViewer({ file, onBack }) {
       }
       setDocText(fullText);
 
-      // Render first page
       await renderPDFPage(pdf, 1);
       setRenderStatus("ready");
     } catch (err) {
@@ -136,42 +127,52 @@ export default function FileViewer({ file, onBack }) {
     const container = viewerRef.current;
     if (!container) return;
 
-    // Clear existing canvases
     container.innerHTML = "";
 
     const page = await pdf.getPage(pageNum);
-    const viewport = page.getViewport({ scale: 1.4 });
+
+    // ── Mobile-aware scaling ───────────────────────────────────────────
+    // Measure the container's actual pixel width (accounts for padding)
+    const containerWidth = container.clientWidth || window.innerWidth - 32;
+    const natural = page.getViewport({ scale: 1 });
+
+    // Scale so the page fills the container exactly, capped at 1.8 on desktop
+    const maxScale = window.innerWidth <= 768 ? 1.0 : 1.8;
+    const scale = Math.min(containerWidth / natural.width, maxScale);
+    const viewport = page.getViewport({ scale });
 
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
     canvas.height = viewport.height;
     canvas.width = viewport.width;
+
+    // Always fill container, never overflow
     canvas.style.width = "100%";
+    canvas.style.maxWidth = "100%";
     canvas.style.height = "auto";
     canvas.style.display = "block";
 
     container.appendChild(canvas);
-
     await page.render({ canvasContext: context, viewport }).promise;
     setCurrentPage(pageNum);
   }
 
   async function goToPage(pageNum) {
     if (!pdfDocRef.current) return;
-    const clamped = Math.max(1, Math.min(pageNum, totalPages));
-    await renderPDFPage(pdfDocRef.current, clamped);
+    await renderPDFPage(
+      pdfDocRef.current,
+      Math.max(1, Math.min(pageNum, totalPages)),
+    );
   }
 
-  // ── DOCX rendering ───────────────────────────────────────────────────
+  // ── DOCX rendering ─────────────────────────────────────────────────
   async function renderDOCX() {
     try {
       await loadScript(MAMMOTH_URL);
       const mammoth = await waitForGlobal("mammoth");
-
       const result = await mammoth.convertToHtml({ arrayBuffer: file.data });
       const html = result.value;
 
-      // Extract plain text for AI
       const tmp = document.createElement("div");
       tmp.innerHTML = html;
       setDocText(tmp.textContent || "");
@@ -179,7 +180,6 @@ export default function FileViewer({ file, onBack }) {
       if (viewerRef.current) {
         viewerRef.current.innerHTML = `<div class="docx-body">${html}</div>`;
       }
-
       setRenderStatus("ready");
     } catch (err) {
       console.error(err);
@@ -194,33 +194,49 @@ export default function FileViewer({ file, onBack }) {
     window.getSelection()?.removeAllRanges();
   }, []);
 
+  const isMobile = window.innerWidth <= 768;
+
   return (
     <div className="file-viewer">
-      {/* Top bar */}
+      {/* ── Top bar ── */}
       <div className="fv-topbar">
         <button className="fv-back-btn" onClick={onBack}>
-          ← Back to Library
+          ← Back
         </button>
+
         <div className="fv-file-info">
-          <span className="fv-filename">{file.name}</span>
+          <span className="fv-filename" title={file.name}>
+            {file.name}
+          </span>
           {file.type === "pdf" && totalPages > 0 && (
             <span className="fv-page-info">
-              Page {currentPage} / {totalPages}
+              {currentPage}/{totalPages}
             </span>
           )}
         </div>
+
         <button
           className={`fv-ai-toggle ${aiPanelOpen ? "active" : ""}`}
           onClick={() => setAiPanelOpen((p) => !p)}
           title="Toggle AI assistant"
         >
-          ◈ AI {aiPanelOpen ? "On" : "Off"}
+          ◈ AI
         </button>
       </div>
 
-      {/* Split layout */}
+      {/* ── Mobile AI sheet indicator (when closed) ── */}
+      {isMobile && !aiPanelOpen && renderStatus === "ready" && (
+        <button
+          className="fv-mobile-ai-bar"
+          onClick={() => setAiPanelOpen(true)}
+        >
+          ◈ Open AI Assistant
+        </button>
+      )}
+
+      {/* ── Split layout ── */}
       <div className={`fv-split ${!aiPanelOpen ? "ai-hidden" : ""}`}>
-        {/* ── Document side ── */}
+        {/* Document side */}
         <div className="fv-doc-side">
           {renderStatus === "loading" && (
             <div className="fv-loading">
@@ -239,14 +255,13 @@ export default function FileViewer({ file, onBack }) {
             </div>
           )}
 
-          {/* Document canvas / content */}
           <div
             ref={viewerRef}
             className={`fv-doc-content ${file.type === "pdf" ? "pdf-mode" : "docx-mode"}`}
             style={{ display: renderStatus === "ready" ? "block" : "none" }}
           />
 
-          {/* PDF page navigation */}
+          {/* PDF page nav */}
           {file.type === "pdf" &&
             renderStatus === "ready" &&
             totalPages > 1 && (
@@ -280,9 +295,18 @@ export default function FileViewer({ file, onBack }) {
             )}
         </div>
 
-        {/* ── AI side ── */}
+        {/* AI side */}
         {aiPanelOpen && (
           <div className="fv-ai-side">
+            {/* Mobile: show close button at top of AI panel */}
+            {isMobile && (
+              <button
+                className="fv-mobile-ai-close"
+                onClick={() => setAiPanelOpen(false)}
+              >
+                ✕ Close AI panel
+              </button>
+            )}
             <AiAssistant
               documentText={docText}
               fileName={file.name}
@@ -301,10 +325,9 @@ export default function FileViewer({ file, onBack }) {
         >
           <button
             className="fv-tooltip-btn"
-            onClick={() => {
-              // AI panel will pick up selectedText change automatically
-              document.querySelector(".ai-quick-actions .highlight")?.click();
-            }}
+            onClick={() =>
+              document.querySelector(".ai-quick-actions .highlight")?.click()
+            }
           >
             ◈ Explain this
           </button>
