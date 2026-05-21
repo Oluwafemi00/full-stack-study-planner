@@ -3593,7 +3593,7 @@ a {
 
 /* ==========================================================================
    FILE VIEWER — MOBILE FIXES
-   Append to bottom of index.css
+   
    ========================================================================== */
 
 /* ── Tighten top bar on mobile ─────────────────────────────────────────── */
@@ -3710,6 +3710,14 @@ a {
 
   .fv-page-total {
     font-size: 0.68rem;
+  }
+
+  /* Canvas is rendered at 2-3× pixel density then scaled down via CSS.
+   This ensures crisp text on all screens including retina/high-DPI mobile. */
+  .fv-doc-content.pdf-mode canvas {
+    image-rendering: -webkit-optimize-contrast; /* Safari */
+    image-rendering: crisp-edges; /* Firefox */
+    image-rendering: pixelated; /* Fallback */
   }
 }
 
