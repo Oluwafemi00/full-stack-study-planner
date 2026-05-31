@@ -131,25 +131,28 @@ export default function FileViewer({ file, onBack }) {
 
     const page = await pdf.getPage(pageNum);
 
-    // ── Mobile-aware scaling ───────────────────────────────────────────
-    // Measure the container's actual pixel width (accounts for padding)
+    // 1. Get the device pixel ratio (2 on Retina, 3 on some mobile screens)
+    const dpr = window.devicePixelRatio || 1;
+
+    // 2. Fit the page to the container's CSS width
     const containerWidth = container.clientWidth || window.innerWidth - 32;
     const natural = page.getViewport({ scale: 1 });
+    const cssScale = containerWidth / natural.width;
 
-    // Scale so the page fills the container exactly, capped at 1.8 on desktop
-    const maxScale = window.innerWidth <= 768 ? 1.0 : 1.8;
-    const scale = Math.min(containerWidth / natural.width, maxScale);
-    const viewport = page.getViewport({ scale });
+    // 3. Render at full physical resolution (cssScale × dpr)
+    const renderScale = cssScale * dpr;
+    const viewport = page.getViewport({ scale: renderScale });
 
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
-    canvas.height = viewport.height;
-    canvas.width = viewport.width;
 
-    // Always fill container, never overflow
-    canvas.style.width = "100%";
-    canvas.style.maxWidth = "100%";
-    canvas.style.height = "auto";
+    // Physical pixel dimensions (sharp on HiDPI screens)
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+
+    // CSS dimensions (logical size — keeps layout correct)
+    canvas.style.width = `${Math.floor(viewport.width / dpr)}px`;
+    canvas.style.height = `${Math.floor(viewport.height / dpr)}px`;
     canvas.style.display = "block";
 
     container.appendChild(canvas);

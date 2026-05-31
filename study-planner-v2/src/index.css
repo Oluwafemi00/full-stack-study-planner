@@ -3714,15 +3714,16 @@ a {
 
   /* ==========================================================================
    FILE VIEWER — PDF SHARPNESS FIX
-   Append to bottom of file-viewer-mobile.css
    ========================================================================== */
 
-  /* Canvas is rendered at 2-3× pixel density then scaled down via CSS.
-   This ensures crisp text on all screens including retina/high-DPI mobile. */
+  /* Remove any pixelated/crisp-edges rules — those hurt text rendering.
+   The canvas is now sized at the physical pixel resolution via JS (DPR scaling),
+   so the browser just displays it 1:1 with no upscaling needed. */
   .fv-doc-content.pdf-mode canvas {
-    image-rendering: -webkit-optimize-contrast; /* Safari */
-    image-rendering: crisp-edges; /* Firefox */
-    image-rendering: pixelated; /* Fallback */
+    image-rendering: auto; /* smooth — correct for text/documents */
+    display: block;
+    max-width: 100%;
+    height: auto;
   }
 }
 
