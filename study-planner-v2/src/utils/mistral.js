@@ -1,10 +1,5 @@
 // ── Mistral AI service — proxy edition ───────────────────────────────────
-// All requests go through your Express proxy.
-// Your Mistral API key lives only on the server — never exposed to the client.
-//
-// Set VITE_AI_PROXY_URL in your frontend .env:
-//   Development:  VITE_AI_PROXY_URL=http://localhost:3001
-//   Production:   VITE_AI_PROXY_URL=https://your-proxy.onrender.com
+// All requests go through Express proxy.
 
 const PROXY_URL = (
   import.meta.env.VITE_AI_PROXY_URL || "http://localhost:3001"

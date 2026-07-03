@@ -18,8 +18,6 @@ export default function FileLibrary({ onOpenFile }) {
   const [search, setSearch] = useState("");
   const inputRef = useRef();
 
-  const apiKeySet = !!getApiKey();
-
   useEffect(() => {
     loadFiles();
   }, []);
@@ -204,7 +202,7 @@ export default function FileLibrary({ onOpenFile }) {
                   className="fl-open-btn"
                   onClick={() => onOpenFile(file)}
                 >
-                  Open {apiKeySet ? "+ Study" : ""}
+                  Open + Study
                 </button>
                 <button
                   className="fl-delete-btn"
