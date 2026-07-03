@@ -1,54 +1,46 @@
-// ── Mistral AI service — direct browser calls ───────────────────────────
-// Calls Mistral's chat completions API directly using a user-provided key.
-// No proxy server needed — the API key is stored in localStorage.
+// ── Mistral AI service — proxy edition ───────────────────────────────────
+// All requests go through your Express proxy.
+// Your Mistral API key lives only on the server — never exposed to the client.
+//
+// Set VITE_AI_PROXY_URL in your frontend .env:
+//   Development:  VITE_AI_PROXY_URL=http://localhost:3001
+//   Production:   VITE_AI_PROXY_URL=https://your-proxy.onrender.com
 
-const MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions";
-const MISTRAL_MODEL = "mistral-small-latest";
-const STORAGE_KEY = "spp_mistral_key";
+const PROXY_URL = (
+  import.meta.env.VITE_AI_PROXY_URL || "http://localhost:3001"
+).replace(/\/$/, "");
 const MAX_CHUNK_CHARS = 12000;
 
-// ── API Key Management ───────────────────────────────────────────────────
-
-export const getMistralKey = () => localStorage.getItem(STORAGE_KEY);
-
-export const saveMistralKey = (key) => localStorage.setItem(STORAGE_KEY, key);
-
-export const clearMistralKey = () => localStorage.removeItem(STORAGE_KEY);
-
-// ── Core request ─────────────────────────────────────────────────────────
-async function mistralRequest(messages, options = {}) {
+// ── Core request ──────────────────────────────────────────────────────────
+async function proxyRequest(messages, options = {}) {
   const { maxTokens = 1024, temperature = 0.4 } = options;
-  const key = getMistralKey();
 
-  if (!key) throw new Error("NO_KEY");
-
-  const res = await fetch(MISTRAL_API_URL, {
+  const res = await fetch(`${PROXY_URL}/api/ai`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${key}`,
-    },
-    body: JSON.stringify({
-      model: MISTRAL_MODEL,
-      messages,
-      max_tokens: maxTokens,
-      temperature,
-    }),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages, maxTokens, temperature }),
   });
 
-  if (!res.ok) {
-    if (res.status === 401) throw new Error("INVALID_KEY");
-    if (res.status === 429) throw new Error("RATE_LIMIT");
-    if (res.status >= 500) throw new Error("SERVER_ERROR");
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data.error?.message || `HTTP_${res.status}`);
-  }
-
   const data = await res.json();
-  return data.choices[0].message.content;
+  if (!res.ok) throw new Error(data.error || `HTTP_${res.status}`);
+  return data.result;
 }
 
-// ── Chunk text ───────────────────────────────────────────────────────────
+// ── Health check ──────────────────────────────────────────────────────────
+export async function checkProxyHealth() {
+  try {
+    const res = await fetch(`${PROXY_URL}/health`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    return data.status === "ok";
+  } catch {
+    return false;
+  }
+}
+
+// ── Chunk text ────────────────────────────────────────────────────────────
 function chunkText(text, maxChars = MAX_CHUNK_CHARS) {
   if (text.length <= maxChars) return [text];
   const chunks = [];
@@ -65,7 +57,7 @@ function chunkText(text, maxChars = MAX_CHUNK_CHARS) {
   return chunks;
 }
 
-// ── Summarise (full generative) ──────────────────────────────────────────
+// ── Summarise ─────────────────────────────────────────────────────────────
 export async function summariseDocument(text, pageText = null) {
   const source = pageText || text;
   const chunks = chunkText(source);
@@ -77,16 +69,15 @@ export async function summariseDocument(text, pageText = null) {
   };
 
   if (chunks.length === 1) {
-    return mistralRequest([
+    return proxyRequest([
       systemMsg,
       { role: "user", content: `DOCUMENT:\n${chunks[0]}` },
     ]);
   }
 
-  // Summarise each chunk individually
   const partials = await Promise.all(
     chunks.map((chunk, i) =>
-      mistralRequest([
+      proxyRequest([
         systemMsg,
         {
           role: "user",
@@ -96,8 +87,7 @@ export async function summariseDocument(text, pageText = null) {
     ),
   );
 
-  // Merge partial summaries into one coherent summary
-  return mistralRequest([
+  return proxyRequest([
     systemMsg,
     {
       role: "user",
@@ -106,13 +96,13 @@ export async function summariseDocument(text, pageText = null) {
   ]);
 }
 
-// ── Explain selected text ────────────────────────────────────────────────
+// ── Explain selected text ─────────────────────────────────────────────────
 export async function explainText(selectedText, documentContext = "") {
   const context = documentContext
     ? `This text comes from a document about: ${documentContext.slice(0, 500)}\n\n`
     : "";
 
-  return mistralRequest([
+  return proxyRequest([
     { role: "system", content: "You are a study assistant." },
     {
       role: "user",
@@ -121,11 +111,11 @@ export async function explainText(selectedText, documentContext = "") {
   ]);
 }
 
-// ── Generate quiz ────────────────────────────────────────────────────────
+// ── Generate quiz ─────────────────────────────────────────────────────────
 export async function generateQuiz(text, numQuestions = 5) {
   const chunk = text.slice(0, MAX_CHUNK_CHARS);
 
-  const raw = await mistralRequest(
+  const raw = await proxyRequest(
     [
       {
         role: "system",
@@ -149,7 +139,7 @@ export async function generateQuiz(text, numQuestions = 5) {
   }
 }
 
-// ── Chat ─────────────────────────────────────────────────────────────────
+// ── Chat ──────────────────────────────────────────────────────────────────
 export async function chatWithDocument(
   userMessage,
   documentText,
@@ -162,26 +152,29 @@ export async function chatWithDocument(
       role: "system",
       content: `You are a helpful study assistant. Answer based on the document provided. Be clear and educational.\n\nDOCUMENT:\n${context}`,
     },
-    // Include last 6 messages of conversation history
     ...conversationHistory.slice(-6),
     { role: "user", content: userMessage },
   ];
 
-  return mistralRequest(messages);
+  return proxyRequest(messages);
 }
 
-// ── Error messages ───────────────────────────────────────────────────────
+// ── Error messages ────────────────────────────────────────────────────────
 export function getErrorMessage(error) {
   const msg = error?.message || "";
-  if (msg === "NO_KEY")
-    return "Please add your Mistral API key to use AI features.";
-  if (msg === "INVALID_KEY")
-    return "Invalid API key. Please check and try again.";
   if (msg === "RATE_LIMIT") return "Rate limit reached. Please wait a moment.";
   if (msg === "PARSE_ERROR")
     return "The AI returned an unexpected format. Please try again.";
-  if (msg === "SERVER_ERROR") return "Mistral AI is temporarily unavailable.";
+  if (msg === "SERVER_ERROR")
+    return "AI service temporarily unavailable. Please try again.";
+  if (msg === "INVALID_KEY")
+    return "Server configuration error. Please contact support.";
   if (msg.includes("fetch") || msg.includes("Failed"))
-    return "Cannot reach Mistral AI. Check your internet connection.";
+    return `Cannot reach AI server. Make sure the proxy is running at ${PROXY_URL}.`;
   return "Something went wrong. Please try again.";
 }
+
+// ── Stubs — key lives on server now ──────────────────────────────────────
+export const getMistralKey = () => true;
+export const saveMistralKey = () => {};
+export const clearMistralKey = () => {};

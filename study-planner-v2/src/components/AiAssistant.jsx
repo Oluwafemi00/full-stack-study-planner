@@ -1,8 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  getMistralKey,
-  saveMistralKey,
-  clearMistralKey,
   summariseDocument,
   explainText,
   generateQuiz,
@@ -10,12 +7,11 @@ import {
   getErrorMessage,
 } from "../utils/mistral";
 
-// Lightweight markdown → JSX renderer for AI responses
+// ── Markdown renderer ─────────────────────────────────────────────────────
 function parseBold(str) {
-  // Split on **bold** markers and return mixed text/strong fragments
   const parts = str.split(/\*\*(.+?)\*\*/g);
   return parts.map((part, i) =>
-    i % 2 === 1 ? <strong key={i}>{part}</strong> : part
+    i % 2 === 1 ? <strong key={i}>{part}</strong> : part,
   );
 }
 
@@ -26,19 +22,24 @@ function formatAIResponse(text) {
     .filter(Boolean)
     .map((line, i) => {
       const trimmed = line.trim();
-
-      // Headings: #### → h5, ### → h4, ## → h3
-      if (trimmed.startsWith("#### ")) {
-        return <h5 key={i} className="ai-heading">{parseBold(trimmed.slice(5))}</h5>;
-      }
-      if (trimmed.startsWith("### ")) {
-        return <h4 key={i} className="ai-heading">{parseBold(trimmed.slice(4))}</h4>;
-      }
-      if (trimmed.startsWith("## ")) {
-        return <h3 key={i} className="ai-heading">{parseBold(trimmed.slice(3))}</h3>;
-      }
-
-      // Bullets: - text, * text, • text
+      if (trimmed.startsWith("#### "))
+        return (
+          <h5 key={i} className="ai-heading">
+            {parseBold(trimmed.slice(5))}
+          </h5>
+        );
+      if (trimmed.startsWith("### "))
+        return (
+          <h4 key={i} className="ai-heading">
+            {parseBold(trimmed.slice(4))}
+          </h4>
+        );
+      if (trimmed.startsWith("## "))
+        return (
+          <h3 key={i} className="ai-heading">
+            {parseBold(trimmed.slice(3))}
+          </h3>
+        );
       if (/^[-•*]\s/.test(trimmed)) {
         return (
           <p key={i} className="ai-bullet">
@@ -46,18 +47,15 @@ function formatAIResponse(text) {
           </p>
         );
       }
-
-      // Numbered lists: 1. text, 2. text
       const numMatch = trimmed.match(/^(\d+)[.)]\s+(.*)/);
       if (numMatch) {
         return (
           <p key={i} className="ai-bullet">
-            <span className="ai-list-num">{numMatch[1]}.</span> {parseBold(numMatch[2])}
+            <span className="ai-list-num">{numMatch[1]}.</span>{" "}
+            {parseBold(numMatch[2])}
           </p>
         );
       }
-
-      // Regular paragraph with bold support
       return <p key={i}>{parseBold(trimmed)}</p>;
     });
 }
@@ -70,8 +68,6 @@ export default function AiAssistant({
   currentPage,
   pageTexts,
 }) {
-  const [apiKey, setApiKey] = useState(() => getMistralKey());
-  const [keyInput, setKeyInput] = useState("");
   const [activeTab, setActiveTab] = useState("chat");
   const [messages, setMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
@@ -80,7 +76,6 @@ export default function AiAssistant({
   const [quizCount, setQuizCount] = useState(5);
   const [summary, setSummary] = useState(null);
   const [scope, setScope] = useState("page");
-  const [showKeyInput, setShowKeyInput] = useState(false);
 
   const messagesRef = useRef(null);
 
@@ -98,30 +93,13 @@ export default function AiAssistant({
   }, [scope]);
 
   const getContextText = useCallback(() => {
-    if (scope === "page" && pageTexts && pageTexts.length > 0 && currentPage) {
+    if (scope === "page" && pageTexts?.length > 0 && currentPage) {
       return pageTexts[currentPage - 1] || documentText;
     }
     return documentText;
   }, [scope, pageTexts, currentPage, documentText]);
 
-  const handleSaveKey = useCallback(() => {
-    if (!keyInput.trim()) return;
-    saveMistralKey(keyInput.trim());
-    setApiKey(keyInput.trim());
-    setKeyInput("");
-  }, [keyInput]);
-
-  const handleClearKey = useCallback(() => {
-    clearMistralKey();
-    setApiKey(null);
-    setShowKeyInput(false);
-  }, []);
-
-  const handleChangeKey = useCallback(() => {
-    setShowKeyInput(true);
-    setKeyInput("");
-  }, []);
-
+  // ── Chat ────────────────────────────────────────────────────────────────
   const handleSendChat = useCallback(async () => {
     const input = chatInput.trim();
     if (!input || loading) return;
@@ -151,6 +129,7 @@ export default function AiAssistant({
     }
   }, [chatInput, loading, getContextText, messages]);
 
+  // ── Explain selection ───────────────────────────────────────────────────
   const handleExplainSelection = useCallback(async () => {
     if (!selectedText || loading) return;
 
@@ -158,20 +137,23 @@ export default function AiAssistant({
       selectedText.length > 200
         ? selectedText.slice(0, 200) + "..."
         : selectedText;
-    const userMsg = { role: "user", content: `Explain: "${snippet}"` };
-    setMessages((prev) => [...prev, userMsg]);
+
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: `Explain: "${snippet}"` },
+    ]);
     setLoading(true);
 
     try {
       const response = await explainText(
         selectedText,
-        documentText ? documentText.slice(0, 500) : "",
+        documentText?.slice(0, 500) || "",
       );
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: response },
       ]);
-      if (onClearSelection) onClearSelection();
+      onClearSelection?.();
     } catch (err) {
       setMessages((prev) => [
         ...prev,
@@ -182,6 +164,7 @@ export default function AiAssistant({
     }
   }, [selectedText, loading, documentText, onClearSelection]);
 
+  // ── Quiz ────────────────────────────────────────────────────────────────
   const handleGenerateQuiz = useCallback(async () => {
     if (loading) return;
     setLoading(true);
@@ -229,6 +212,7 @@ export default function AiAssistant({
     setQuiz((prev) => ({ ...prev, submitted: true, score }));
   }, [quiz]);
 
+  // ── Summary ─────────────────────────────────────────────────────────────
   const handleSummarize = useCallback(async () => {
     if (loading) return;
     setLoading(true);
@@ -253,7 +237,6 @@ export default function AiAssistant({
 
   const handleQuickSummarize = useCallback(() => {
     setActiveTab("summary");
-    // Delay to let tab switch render, then trigger
     setTimeout(() => handleSummarize(), 50);
   }, [handleSummarize]);
 
@@ -261,10 +244,6 @@ export default function AiAssistant({
     setActiveTab("quiz");
     setTimeout(() => handleGenerateQuiz(), 50);
   }, [handleGenerateQuiz]);
-
-  const handleSuggestionClick = useCallback((text) => {
-    setChatInput(text);
-  }, []);
 
   const handleChatKeyDown = useCallback(
     (e) => {
@@ -276,6 +255,7 @@ export default function AiAssistant({
     [handleSendChat],
   );
 
+  // ── Scope toggle ─────────────────────────────────────────────────────────
   const renderScopeToggle = () => {
     if (!pageTexts || pageTexts.length === 0) return null;
     return (
@@ -296,45 +276,7 @@ export default function AiAssistant({
     );
   };
 
-  // --- No API Key Screen ---
-  if (!apiKey) {
-    return (
-      <div className="ai-key-setup">
-        <div className="ai-key-icon">🔑</div>
-        <h3>Connect Mistral AI</h3>
-        <p>Enter your free API key to unlock AI study features</p>
-        <div className="ai-key-input-row">
-          <input
-            className="ai-key-input"
-            type="password"
-            value={keyInput}
-            onChange={(e) => setKeyInput(e.target.value)}
-            placeholder="Enter your Mistral API key"
-            onKeyDown={(e) => e.key === "Enter" && handleSaveKey()}
-          />
-          <button
-            className="ai-key-save-btn"
-            onClick={handleSaveKey}
-            disabled={!keyInput.trim()}
-          >
-            Save
-          </button>
-        </div>
-        <p className="ai-key-link">
-          Get a free key at{" "}
-          <a
-            href="https://console.mistral.ai"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            console.mistral.ai
-          </a>
-        </p>
-      </div>
-    );
-  }
-
-  // --- Main UI ---
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="ai-panel">
       {/* Header */}
@@ -343,29 +285,7 @@ export default function AiAssistant({
           <span className="ai-indicator" />
           <span className="ai-title">AI ASSISTANT</span>
         </div>
-        <button
-          className="ai-settings-btn"
-          onClick={() => setShowKeyInput((prev) => !prev)}
-          title="API Key Settings"
-        >
-          ⚙
-        </button>
       </div>
-
-      {showKeyInput && (
-        <div className="ai-key-manage">
-          <span className="ai-key-masked">
-            {"•".repeat(8)}
-            {apiKey.slice(-4)}
-          </span>
-          <button onClick={handleChangeKey} className="ai-key-btn">
-            Change
-          </button>
-          <button onClick={handleClearKey} className="ai-key-btn danger">
-            Clear
-          </button>
-        </div>
-      )}
 
       {/* Tabs */}
       <div className="ai-tabs">
@@ -389,7 +309,7 @@ export default function AiAssistant({
         </button>
       </div>
 
-      {/* Chat Tab */}
+      {/* ── Chat Tab ── */}
       {activeTab === "chat" && (
         <div className="ai-chat-tab">
           <div className="ai-quick-actions">
@@ -407,19 +327,23 @@ export default function AiAssistant({
             >
               ✦ Quiz Me
             </button>
-            {/* <button
-              className={`ai-action-btn ${selectedText ? "highlight" : ""}`}
-              onClick={handleExplainSelection}
-              disabled={!selectedText || loading}
-            >
-              → Explain Selection
-            </button> */}
+            {selectedText && (
+              <button
+                className="ai-action-btn highlight"
+                onClick={handleExplainSelection}
+                disabled={loading}
+              >
+                → Explain Selection
+              </button>
+            )}
           </div>
 
           <div className="ai-messages" ref={messagesRef}>
             {messages.length === 0 && !loading ? (
               <div className="ai-empty">
-                <p>Ask me anything about your document. Try:</p>
+                <p>
+                  Ask me anything about <strong>{fileName}</strong>. Try:
+                </p>
                 {[
                   "What is this document about?",
                   "Give me the key takeaways",
@@ -428,7 +352,7 @@ export default function AiAssistant({
                   <button
                     key={i}
                     className="ai-suggestion"
-                    onClick={() => handleSuggestionClick(suggestion)}
+                    onClick={() => setChatInput(suggestion)}
                   >
                     {suggestion}
                   </button>
@@ -482,7 +406,7 @@ export default function AiAssistant({
         </div>
       )}
 
-      {/* Quiz Tab */}
+      {/* ── Quiz Tab ── */}
       {activeTab === "quiz" && (
         <div className="ai-quiz-tab">
           {renderScopeToggle()}
@@ -525,13 +449,7 @@ export default function AiAssistant({
             <div className="ai-quiz-content">
               {quiz.submitted && (
                 <div
-                  className={`quiz-score-banner ${
-                    quiz.score === quiz.questions.length
-                      ? "perfect"
-                      : quiz.score >= quiz.questions.length * 0.6
-                        ? "good"
-                        : "retry"
-                  }`}
+                  className={`quiz-score-banner ${quiz.score === quiz.questions.length ? "perfect" : quiz.score >= quiz.questions.length * 0.6 ? "good" : "retry"}`}
                 >
                   {quiz.score} / {quiz.questions.length}
                   {quiz.score === quiz.questions.length && " 🎉 Perfect!"}
@@ -625,7 +543,7 @@ export default function AiAssistant({
         </div>
       )}
 
-      {/* Summary Tab */}
+      {/* ── Summary Tab ── */}
       {activeTab === "summary" && (
         <div className="ai-summary-wrap">
           {renderScopeToggle()}
