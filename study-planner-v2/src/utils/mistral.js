@@ -1,9 +1,7 @@
 // ── Mistral AI service — proxy edition ───────────────────────────────────
 // All requests go through Express proxy.
 
-const PROXY_URL = (
-  import.meta.env.VITE_AI_PROXY_URL || "http://localhost:3001"
-).replace(/\/$/, "");
+const PROXY_URL = import.meta.env.VITE_AI_PROXY_URL;
 const MAX_CHUNK_CHARS = 12000;
 
 // ── Core request ──────────────────────────────────────────────────────────
