@@ -9,7 +9,6 @@ import SubjectManager from "./components/SubjectManager";
 import StudyAssistant from "./components/StudyAssistant";
 import UpdateToast from "./components/UpdateToast";
 import { isToday } from "./utils/helpers";
-import { verifySession } from "./utils/subscription";
 import { initGA, trackPage } from "./utils/analytics";
 
 const VIEW_LABELS = {
