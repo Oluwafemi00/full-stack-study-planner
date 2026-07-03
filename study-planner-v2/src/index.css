@@ -2581,7 +2581,7 @@ a {
   font-weight: 500;
   transition: 0.2s;
   white-space: nowrap;
-  margin: 0.2rem 0;
+  margin: 0.5rem 0;
 }
 .ai-action-btn:hover:not(:disabled) {
   border-color: var(--border-mid);
