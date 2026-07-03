@@ -2566,6 +2566,7 @@ a {
   flex-wrap: wrap;
   gap: 5px;
   flex-shrink: 0;
+  margin-bottom: 1.5rem;
 }
 
 .ai-action-btn {
