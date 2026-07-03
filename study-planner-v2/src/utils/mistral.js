@@ -163,7 +163,7 @@ export function getErrorMessage(error) {
   if (msg === "INVALID_KEY")
     return "Server configuration error. Please contact support.";
   if (msg.includes("fetch") || msg.includes("Failed"))
-    return `Cannot reach AI server. Make sure the proxy is running at ${PROXY_URL}.`;
+    return `Service is down currently, please try again.`;
   return "Something went wrong. Please try again.";
 }
 
