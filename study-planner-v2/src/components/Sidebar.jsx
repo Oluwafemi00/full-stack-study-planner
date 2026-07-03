@@ -4,8 +4,8 @@ import { useApp } from "../context/AppContext";
 const NAV = [
   { id: "today", icon: "◈", label: "Today" },
   { id: "all", icon: "⊞", label: "All Tasks" },
+  { id: "study-assistant", icon: "◈", label: "Study Assistant", soon: false },
   { id: "dashboard", icon: "◉", label: "Dashboard" },
-  { id: "study-assistant", icon: "◈", label: "Study Assistant", soon: true },
 ];
 
 export default function Sidebar({ mobileOpen, onClose }) {

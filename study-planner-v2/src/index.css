@@ -2188,19 +2188,18 @@ a {
 }
 
 /* ==========================================================================
-   FILE VIEWER
+   FILE VIEWER — Full-screen overlay
    ========================================================================== */
 .file-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 52px);
+  height: 100vh;
+  width: 100vw;
+  background: var(--bg);
   overflow: hidden;
-}
-
-@media (min-width: 769px) {
-  .file-viewer {
-    height: 100vh;
-  }
 }
 
 .fv-topbar {
@@ -2275,7 +2274,7 @@ a {
 /* Split layout */
 .fv-split {
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: 1fr 400px;
   flex: 1;
   overflow: hidden;
 }
@@ -2450,12 +2449,29 @@ a {
   justify-content: center;
 }
 
+/* Tablet: narrower AI panel */
+@media (max-width: 1100px) {
+  .fv-split {
+    grid-template-columns: 1fr 340px;
+  }
+}
+
 /* Mobile: stack doc + AI vertically */
 @media (max-width: 768px) {
+  .file-viewer {
+    position: fixed;
+    inset: 0;
+    z-index: 600;
+    height: 100vh;
+    height: 100dvh;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
   .fv-split {
     grid-template-columns: 1fr;
     grid-template-rows: auto;
-    overflow-y: auto;
+    overflow-y: visible;
+    flex: none;
   }
   .fv-doc-side {
     min-height: 50vh;
@@ -2464,10 +2480,6 @@ a {
   .fv-ai-side {
     border-left: none;
     border-top: 1px solid var(--border);
-  }
-  .file-viewer {
-    height: auto;
-    overflow: visible;
   }
 }
 
@@ -2690,6 +2702,43 @@ a {
 }
 .ai-bullet {
   padding-left: 0.5rem;
+}
+
+/* AI markdown headings */
+.ai-heading {
+  font-family: var(--serif);
+  color: var(--text);
+  margin: 0.6rem 0 0.25rem;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+h3.ai-heading {
+  font-size: 1rem;
+}
+h4.ai-heading {
+  font-size: 0.92rem;
+}
+h5.ai-heading {
+  font-size: 0.85rem;
+}
+.ai-heading:first-child {
+  margin-top: 0;
+}
+
+/* Numbered list marker */
+.ai-list-num {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--accent);
+  font-weight: 500;
+  margin-right: 2px;
+}
+
+/* Bold in AI content */
+.ai-msg-content strong,
+.ai-summary-content strong {
+  color: var(--text);
+  font-weight: 600;
 }
 
 /* Typing indicator */
@@ -3039,6 +3088,320 @@ a {
   gap: 8px;
   font-size: 0.78rem;
   color: var(--green);
+}
+
+/* ==========================================================================
+   AI KEY SETUP & SCOPE TOGGLE
+   ========================================================================== */
+
+/* ── API Key setup card ────────────────────────────────────────────────── */
+.ai-key-setup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+.ai-key-icon {
+  font-size: 2.2rem;
+  filter: grayscale(0.3);
+}
+.ai-key-setup h3 {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  color: var(--text);
+  margin: 0;
+}
+.ai-key-setup p {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  line-height: 1.55;
+  margin: 0;
+}
+.ai-key-input-row {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+.ai-key-input {
+  flex: 1;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 0.55rem 0.75rem;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  transition: border-color 0.2s;
+}
+.ai-key-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.ai-key-input::placeholder {
+  color: var(--text-dim);
+}
+.ai-key-save-btn {
+  background: var(--accent);
+  color: #050505;
+  border: none;
+  border-radius: var(--r-sm);
+  padding: 0.55rem 1.1rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: var(--sans);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    opacity 0.2s,
+    transform 0.15s;
+}
+.ai-key-save-btn:hover:not(:disabled) {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+.ai-key-save-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.ai-key-link {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.ai-key-link a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.ai-key-link a:hover {
+  text-decoration: underline;
+}
+
+/* ── Key management row (when key is set) ────────────────────────────── */
+.ai-key-manage {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.5rem 0.65rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  animation: fadeIn 0.2s ease;
+  flex-shrink: 0;
+}
+.ai-key-masked {
+  flex: 1;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ai-key-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-size: 0.68rem;
+  padding: 2px 8px;
+  cursor: pointer;
+  transition: 0.15s;
+  white-space: nowrap;
+}
+.ai-key-btn:hover {
+  border-color: var(--border-mid);
+  color: var(--text);
+}
+.ai-key-btn.danger:hover {
+  border-color: rgba(224, 82, 82, 0.4);
+  color: var(--red);
+}
+
+/* ── Settings gear ─────────────────────────────────────────────────────── */
+.ai-settings-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: 0.15s;
+}
+.ai-settings-btn:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+/* ── Scope toggle (This Page / Full Document) ─────────────────────────── */
+.ai-scope-toggle {
+  display: flex;
+  gap: 2px;
+  background: var(--surface-2);
+  padding: 3px;
+  border-radius: var(--r-sm);
+  flex-shrink: 0;
+}
+.ai-scope-btn {
+  flex: 1;
+  padding: 4px 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  font-weight: 500;
+  font-family: var(--sans);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: 0.15s;
+  white-space: nowrap;
+}
+.ai-scope-btn:hover {
+  color: var(--text);
+}
+.ai-scope-btn.active {
+  background: var(--surface-3);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* ── Quiz count selector ───────────────────────────────────────────────── */
+.ai-quiz-config {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1.5rem 1rem;
+}
+.ai-quiz-config-label {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.ai-quiz-counts {
+  display: flex;
+  gap: 6px;
+}
+.ai-quiz-count-btn {
+  width: 40px;
+  height: 32px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-mid);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: 0.15s;
+}
+.ai-quiz-count-btn:hover {
+  border-color: var(--border-mid);
+  color: var(--text);
+}
+.ai-quiz-count-btn.active {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+.ai-generate-btn {
+  width: 100%;
+  padding: 0.65rem 1rem;
+  background: var(--accent);
+  color: #050505;
+  border: none;
+  border-radius: var(--r-sm);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: var(--sans);
+  cursor: pointer;
+  transition:
+    opacity 0.2s,
+    transform 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.ai-generate-btn:hover:not(:disabled) {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+.ai-generate-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Summary content ───────────────────────────────────────────────────── */
+.ai-summary-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+  overflow-y: auto;
+}
+.ai-summary-content {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 0.85rem 1rem;
+  font-size: 0.82rem;
+  line-height: 1.65;
+  color: var(--text-mid);
+  animation: fadeIn 0.3s ease;
+}
+.ai-summary-content p {
+  margin-bottom: 0.35rem;
+}
+.ai-summary-content p:last-child {
+  margin: 0;
+}
+.ai-regenerate-btn {
+  align-self: flex-start;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.ai-regenerate-btn:hover {
+  border-color: var(--border-mid);
+  color: var(--text);
+}
+
+/* ── Quiz action row ───────────────────────────────────────────────────── */
+.ai-quiz-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.ai-quiz-actions button {
+  flex: 1;
+}
+
+/* ── Centered loading for summary/quiz ─────────────────────────────────── */
+.ai-centered-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2.5rem;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  flex: 1;
 }
 
 /* ==========================================================================
@@ -3683,14 +4046,7 @@ a {
     flex-shrink: 0;
   }
 
-  /* File viewer itself — full height, scrollable */
-  .file-viewer {
-    height: calc(100vh - 52px);
-    overflow-y: auto;
-    overflow-x: hidden;
-    display: flex;
-    flex-direction: column;
-  }
+  /* File viewer — already handled by the base fixed overlay styles */
 
   /* Page nav — compact on mobile */
   .fv-page-nav {

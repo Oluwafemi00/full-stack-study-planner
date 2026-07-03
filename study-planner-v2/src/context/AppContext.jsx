@@ -1,9 +1,7 @@
 import { createContext, useContext, useReducer, useEffect } from "react";
 
-// ── Default subjects ──────────────────────────────────────────────────────
 const DEFAULT_SUBJECTS = [
   { id: "s1", name: "General Studies", color: "#6366f1" },
-  // { id: "s2", name: "Physics", color: "#06b6d4" },
 ];
 
 const DEFAULT_SETTINGS = {
@@ -13,10 +11,9 @@ const DEFAULT_SETTINGS = {
   sessionsBeforeLong: 4,
   autoAdvance: false,
   soundEnabled: true,
-  theme: "dark", // 'light' | 'dark'
+  theme: "dark",
 };
 
-// ── Initial state ─────────────────────────────────────────────────────────
 function loadState() {
   try {
     const raw = localStorage.getItem("spp_v2");
@@ -30,19 +27,17 @@ function getInitialState() {
   return {
     subjects: saved?.subjects ?? DEFAULT_SUBJECTS,
     tasks: saved?.tasks ?? [],
-    sessionHistory: saved?.sessionHistory ?? [], // [{ date, subjectId, taskId, completedAt }]
+    sessionHistory: saved?.sessionHistory ?? [],
     streak: saved?.streak ?? { count: 0, lastDate: null },
     settings: saved?.settings ?? DEFAULT_SETTINGS,
-    view: "today", // 'today' | 'all' | 'subject:{id}' | 'dashboard'
-    filterStatus: "all", // 'all' | 'pending' | 'completed'
+    view: saved?.view ?? "today", // ← now persisted
+    filterStatus: "all",
     quickCaptureOpen: false,
   };
 }
 
-// ── Reducer ───────────────────────────────────────────────────────────────
 function reducer(state, action) {
   switch (action.type) {
-    // Tasks
     case "ADD_TASK": {
       const task = {
         id: Date.now(),
@@ -61,27 +56,28 @@ function reducer(state, action) {
       return { ...state, tasks: [task, ...state.tasks] };
     }
 
-    case "UPDATE_TASK": {
+    case "UPDATE_TASK":
       return {
         ...state,
         tasks: state.tasks.map((t) =>
           t.id === action.payload.id ? { ...t, ...action.payload.changes } : t,
         ),
       };
-    }
 
     case "TOGGLE_TASK": {
       const now = new Date().toISOString();
-      const updated = state.tasks.map((t) =>
-        t.id === action.payload
-          ? {
-              ...t,
-              completed: !t.completed,
-              completedAt: !t.completed ? now : null,
-            }
-          : t,
-      );
-      return { ...state, tasks: updated };
+      return {
+        ...state,
+        tasks: state.tasks.map((t) =>
+          t.id === action.payload
+            ? {
+                ...t,
+                completed: !t.completed,
+                completedAt: !t.completed ? now : null,
+              }
+            : t,
+        ),
+      };
     }
 
     case "DELETE_TASK":
@@ -112,7 +108,6 @@ function reducer(state, action) {
       };
     }
 
-    // Subjects
     case "ADD_SUBJECT": {
       const subject = { id: `s${Date.now()}`, ...action.payload };
       return { ...state, subjects: [...state.subjects, subject] };
@@ -130,14 +125,12 @@ function reducer(state, action) {
         ),
       };
 
-    // Sessions
     case "LOG_SESSION": {
       const todayStr = new Date().toDateString();
       const entry = {
         ...action.payload,
         completedAt: new Date().toISOString(),
       };
-      // Update streak
       const lastDate = state.streak.lastDate;
       let count = state.streak.count;
       if (lastDate !== todayStr) {
@@ -152,11 +145,9 @@ function reducer(state, action) {
       };
     }
 
-    // Settings
     case "UPDATE_SETTINGS":
       return { ...state, settings: { ...state.settings, ...action.payload } };
 
-    // UI
     case "SET_VIEW":
       return { ...state, view: action.payload };
     case "SET_FILTER":
@@ -169,24 +160,21 @@ function reducer(state, action) {
   }
 }
 
-// ── Context ───────────────────────────────────────────────────────────────
 const AppContext = createContext(null);
 
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, undefined, getInitialState);
 
-  // Persist to localStorage on every state change
+  // Persist to localStorage — now includes view
   useEffect(() => {
-    const { view, filterStatus, quickCaptureOpen, ...persisted } = state;
+    const { filterStatus, quickCaptureOpen, ...persisted } = state;
     localStorage.setItem("spp_v2", JSON.stringify(persisted));
   }, [state]);
 
-  // Apply theme
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", state.settings.theme);
   }, [state.settings.theme]);
 
-  // Global keyboard shortcut: Cmd/Ctrl+K → quick capture
   useEffect(() => {
     const handler = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {

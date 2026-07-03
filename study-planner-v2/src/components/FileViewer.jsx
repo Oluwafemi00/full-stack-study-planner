@@ -51,6 +51,7 @@ export default function FileViewer({ file, onBack }) {
   const [aiPanelOpen, setAiPanelOpen] = useState(() => window.innerWidth > 768);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
+  const [pageTexts, setPageTexts] = useState([]);
 
   const viewerRef = useRef();
   const pdfDocRef = useRef();
@@ -103,14 +104,18 @@ export default function FileViewer({ file, onBack }) {
       pdfDocRef.current = pdf;
       setTotalPages(pdf.numPages);
 
-      // Extract text for AI (up to 30 pages)
+      // Extract text for AI (up to 30 pages) — store per-page for scope toggle
       let fullText = "";
+      const perPage = [];
       for (let i = 1; i <= Math.min(pdf.numPages, 30); i++) {
         const page = await pdf.getPage(i);
         const content = await page.getTextContent();
-        fullText += content.items.map((s) => s.str).join(" ") + "\n";
+        const pageText = content.items.map((s) => s.str).join(" ");
+        perPage.push(pageText);
+        fullText += pageText + "\n";
       }
       setDocText(fullText);
+      setPageTexts(perPage);
 
       await renderPDFPage(pdf, 1);
       setRenderStatus("ready");
@@ -315,6 +320,8 @@ export default function FileViewer({ file, onBack }) {
               fileName={file.name}
               selectedText={selectedText}
               onClearSelection={clearSelection}
+              currentPage={currentPage}
+              pageTexts={pageTexts}
             />
           </div>
         )}
