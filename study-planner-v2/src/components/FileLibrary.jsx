@@ -6,7 +6,6 @@ import {
   readFileAsArrayBuffer,
   formatFileSize,
 } from "../utils/fileStorage";
-import { getApiKey } from "../utils/gemini";
 
 const ACCEPTED = ".pdf,.docx,.doc";
 const MAX_SIZE = 20 * 1024 * 1024; // 20 MB
