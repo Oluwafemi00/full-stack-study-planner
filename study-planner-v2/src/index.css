@@ -2784,6 +2784,8 @@ h5.ai-heading {
   gap: 6px;
   align-items: center;
   flex-shrink: 0;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
 }
 .ai-input {
   flex: 1;
