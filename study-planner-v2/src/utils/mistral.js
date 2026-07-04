@@ -1,14 +1,14 @@
 // ── Mistral AI service — proxy edition ───────────────────────────────────
 // All requests go through Express proxy.
 
-const PROXY_URL = "full-stack-study-planner-2tds0tg14.vercel.app";
+const PROXY_URL = "https://full-stack-study-planner.onrender.com";
 const MAX_CHUNK_CHARS = 12000;
 
 // ── Core request ──────────────────────────────────────────────────────────
 async function proxyRequest(messages, options = {}) {
   const { maxTokens = 1024, temperature = 0.4 } = options;
 
-  const res = await fetch(`${PROXY_URL}`, {
+  const res = await fetch(`${PROXY_URL}/api/ai`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ messages, maxTokens, temperature }),
@@ -20,18 +20,18 @@ async function proxyRequest(messages, options = {}) {
 }
 
 // ── Health check ──────────────────────────────────────────────────────────
-// export async function checkProxyHealth() {
-//   try {
-//     const res = await fetch(`${PROXY_URL}/health`, {
-//       signal: AbortSignal.timeout(5000),
-//     });
-//     if (!res.ok) return false;
-//     const data = await res.json();
-//     return data.status === "ok";
-//   } catch {
-//     return false;
-//   }
-// }
+export async function checkProxyHealth() {
+  try {
+    const res = await fetch(`${PROXY_URL}/health`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    return data.status === "ok";
+  } catch {
+    return false;
+  }
+}
 
 // ── Chunk text ────────────────────────────────────────────────────────────
 function chunkText(text, maxChars = MAX_CHUNK_CHARS) {
