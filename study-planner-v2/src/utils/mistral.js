@@ -1,7 +1,7 @@
 // ── Mistral AI service — proxy edition ───────────────────────────────────
 // All requests go through Express proxy.
 
-const PROXY_URL = "https://full-stack-study-planner-2tds0tg14.vercel.app/";
+const PROXY_URL = "https://full-stack-study-planner.onrender.com";
 const MAX_CHUNK_CHARS = 12000;
 
 // ── Core request ──────────────────────────────────────────────────────────
