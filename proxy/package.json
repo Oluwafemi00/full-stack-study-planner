@@ -1,0 +1,12 @@
+{
+  "name": "study-planner-ai-proxy",
+  "version": "1.0.0",
+  "description": "Mistral AI proxy for Study Planner Pro — hosted on Vercel",
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "devDependencies": {
+    "vercel": "^37.0.0"
+  }
+}
