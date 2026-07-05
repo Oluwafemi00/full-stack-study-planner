@@ -17,21 +17,13 @@ const MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions";
 const MISTRAL_MODEL = process.env.MISTRAL_MODEL || "mistral-small-latest";
 
 // ── CORS ──────────────────────────────────────────────────────────────────
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "*")
-  .split(",")
-  .map((s) => s.trim());
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS.split(",").map((s) =>
+  s.trim(),
+);
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (
-        !origin ||
-        ALLOWED_ORIGINS.includes("*") ||
-        ALLOWED_ORIGINS.includes(origin)
-      )
-        return callback(null, true);
-      callback(new Error(`CORS: origin ${origin} not allowed`));
-    },
+    origin: "https://studyplanner.pages.dev",
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type"],
   }),
