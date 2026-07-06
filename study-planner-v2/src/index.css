@@ -2270,25 +2270,21 @@ a {
   color: var(--accent);
   background: var(--accent-bg);
 }
-
-/* Split layout */
+/* ── Split: Slide-over Drawer for AI ─────────────────────────── */
 .fv-split {
-  display: grid;
-  grid-template-columns: 1fr 400px;
+  position: relative; /* Acts as the bounding box for the absolute drawer */
+  display: flex;
+  flex-direction: row; /* Keep elements side-by-side */
+  overflow: hidden; /* Traps the drawer when sliding */
   flex: 1;
-  overflow: hidden;
-}
-.fv-split.ai-hidden {
-  grid-template-columns: 1fr;
 }
 
-/* Document side */
 .fv-doc-side {
+  width: 100%;
+  height: 100%; /* Keep the document scrolling independently */
   overflow-y: auto;
-  background: var(--bg);
-  position: relative;
-  display: flex;
-  flex-direction: column;
+  overflow-x: hidden;
+  flex-shrink: 0;
 }
 
 .fv-loading,
@@ -2403,14 +2399,31 @@ a {
   font-size: 0.72rem;
   color: var(--text-dim);
 }
-
-/* AI side */
+/* AI panel slides in as an overlay */
 .fv-ai-side {
-  border-left: 1px solid var(--border);
-  overflow-y: auto;
+  display: flex; /* ADD THIS */
+  flex-direction: column; /* ADD THIS */
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 85%;
+  max-width: 360px;
   background: var(--surface);
-  display: flex;
-  flex-direction: column;
+  border-left: 1px solid var(--border);
+  border-top: none;
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  animation: slideInDrawer 0.35s var(--ease) forwards;
+}
+
+@keyframes slideInDrawer {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 /* Selection tooltip */
@@ -2489,10 +2502,12 @@ a {
 .ai-panel {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
   min-height: 0;
   padding: 1rem;
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom));
   gap: 0.75rem;
+  overflow: hidden;
 }
 
 .ai-header {
@@ -2537,27 +2552,31 @@ a {
 
 .ai-tabs {
   display: flex;
-  gap: 2px;
+  gap: 4px;
   background: var(--surface-2);
-  padding: 3px;
-  border-radius: var(--r-sm);
+  padding: 4px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
 }
 .ai-tab {
-  padding: 3px 10px;
+  flex: 1;
+  padding: 6px 12px;
   border: none;
   background: transparent;
   color: var(--text-dim);
   font-size: 0.72rem;
   font-weight: 500;
-  border-radius: 4px;
-  transition: 0.15s;
+  border-radius: 100px;
+  transition: all 0.2s var(--ease);
 }
 .ai-tab:hover {
   color: var(--text);
 }
 .ai-tab.active {
-  background: var(--surface-3);
+  background: var(--surface);
   color: var(--text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border-mid);
 }
 
 /* Quick action buttons */
@@ -2572,28 +2591,30 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 10px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--r-sm);
+  padding: 6px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border-mid);
+  border-radius: 100px;
   color: var(--text-mid);
   font-size: 0.75rem;
   font-weight: 500;
-  transition: 0.2s;
+  transition: all 0.2s ease;
   white-space: nowrap;
   margin: 0.5rem 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 .ai-action-btn:hover:not(:disabled) {
-  border-color: var(--border-mid);
+  border-color: var(--accent);
   color: var(--text);
+  transform: translateY(-1px);
 }
 .ai-action-btn:disabled {
   opacity: 0.45;
 }
 .ai-action-btn.highlight {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--accent-bg);
+  background: var(--accent);
+  color: #fff;
+  border: none;
 }
 .ai-action-btn.loading {
   opacity: 0.7;
@@ -2622,7 +2643,7 @@ a {
   flex-direction: column;
   gap: 0.75rem;
   min-height: 0;
-  padding-right: 2px;
+  padding-right: 4px;
 }
 
 .ai-empty {
@@ -2658,22 +2679,30 @@ a {
 
 .ai-msg {
   display: flex;
-  gap: 8px;
-  align-items: flex-start;
+  gap: 10px;
+  align-items: flex-end; /* Align to bottom of bubbles */
+  margin-bottom: 0.5rem;
   animation: fadeIn 0.2s ease;
 }
 .ai-msg.user {
   justify-content: flex-end;
 }
 .ai-msg.user .ai-msg-content {
-  background: var(--accent-bg);
-  border: 1px solid rgba(124, 110, 240, 0.2);
-  border-radius: var(--r) var(--r) 2px var(--r);
+  background: var(--accent);
+  color: #ffffff;
+  border-radius: 20px 20px 4px 20px;
 }
+
+/* Ensure bold text is readable on the purple background */
+.ai-msg.user .ai-msg-content strong {
+  color: #ffffff;
+}
+
 .ai-msg.assistant .ai-msg-content {
   background: var(--surface-2);
+  color: var(--text-mid);
+  border-radius: 20px 20px 20px 4px;
   border: 1px solid var(--border);
-  border-radius: var(--r) var(--r) var(--r) 2px;
 }
 .ai-msg.error .ai-msg-content {
   background: rgba(224, 82, 82, 0.08);
@@ -2683,17 +2712,18 @@ a {
 
 .ai-msg-icon {
   color: var(--accent);
-  font-size: 0.75rem;
-  margin-top: 8px;
+  font-size: 0.85rem;
+  margin-bottom: 10px; /* Align with bottom of bubble */
   flex-shrink: 0;
 }
 
 .ai-msg-content {
-  padding: 0.6rem 0.85rem;
-  font-size: 0.82rem;
+  padding: 0.75rem 1.1rem;
+  font-size: 0.85rem;
   line-height: 1.6;
-  color: var(--text-mid);
-  max-width: 90%;
+  max-width: 88%;
+  border: none;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 .ai-msg-content p {
   margin-bottom: 0.2rem;
@@ -2784,22 +2814,33 @@ h5.ai-heading {
   gap: 6px;
   align-items: center;
   flex-shrink: 0;
-  margin-top: 1rem;
-  margin-bottom: 1rem;
-}
-.ai-input {
-  flex: 1;
+  margin-top: auto; /* Push to bottom */
+  margin-bottom: 0.5rem;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: 0.55rem 0.85rem;
+  border-radius: 24px; /* Pill shape */
+  padding: 4px 4px 4px 16px;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.ai-input-row:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.ai-input {
+  flex: 1;
+  background: transparent;
+  border: none;
   color: var(--text);
-  font-size: 0.82rem;
-  transition: border-color 0.2s;
+  font-size: 0.85rem;
+  padding: 0;
+  height: 36px;
 }
 .ai-input:focus {
   outline: none;
-  border-color: var(--accent);
 }
 .ai-input::placeholder {
   color: var(--text-dim);
@@ -2809,9 +2850,9 @@ h5.ai-heading {
 }
 
 .ai-send-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: var(--r-sm);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%; /* Perfect circle */
   background: var(--accent);
   border: none;
   color: #fff;
@@ -2820,42 +2861,16 @@ h5.ai-heading {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: opacity 0.2s;
+  transition:
+    opacity 0.2s,
+    transform 0.15s;
 }
 .ai-send-btn:disabled {
   opacity: 0.4;
 }
 .ai-send-btn:hover:not(:disabled) {
-  opacity: 0.85;
-}
-
-/* No key state */
-.ai-no-key {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 2rem 1.5rem;
-  text-align: center;
-}
-.ai-no-key-icon {
-  font-size: 2.5rem;
-}
-.ai-no-key h3 {
-  font-family: var(--serif);
-  font-size: 1.2rem;
-  color: var(--text);
-}
-.ai-no-key p {
-  font-size: 0.82rem;
-  color: var(--text-dim);
-  line-height: 1.6;
-}
-.ai-no-key a {
-  color: var(--accent);
-}
-.ai-no-key-hint {
-  font-size: 0.78rem;
+  opacity: 0.9;
+  transform: scale(1.05);
 }
 
 /* ==========================================================================
@@ -3030,218 +3045,6 @@ h5.ai-heading {
   font-size: 0.82rem;
 }
 
-/* ==========================================================================
-   SETTINGS ADDITIONS
-   ========================================================================== */
-.settings-icon-btn {
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  font-size: 0.85rem;
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: 0.15s;
-}
-.settings-icon-btn:hover {
-  background: var(--surface-2);
-  color: var(--text);
-}
-
-.settings-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.settings-section-label {
-  font-family: var(--mono);
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-dim);
-}
-
-.settings-hint {
-  font-size: 0.78rem;
-  color: var(--text-dim);
-  line-height: 1.5;
-}
-.settings-hint a {
-  color: var(--accent);
-}
-
-.settings-key-row {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-}
-.settings-key-input {
-  flex: 1;
-  font-family: var(--mono);
-  font-size: 0.78rem;
-}
-
-.settings-key-status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.78rem;
-  color: var(--green);
-}
-
-/* ==========================================================================
-   AI KEY SETUP & SCOPE TOGGLE
-   ========================================================================== */
-
-/* ── API Key setup card ────────────────────────────────────────────────── */
-.ai-key-setup {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.85rem;
-  padding: 2rem 1.5rem;
-  text-align: center;
-}
-.ai-key-icon {
-  font-size: 2.2rem;
-  filter: grayscale(0.3);
-}
-.ai-key-setup h3 {
-  font-family: var(--serif);
-  font-size: 1.15rem;
-  color: var(--text);
-  margin: 0;
-}
-.ai-key-setup p {
-  font-size: 0.82rem;
-  color: var(--text-dim);
-  line-height: 1.55;
-  margin: 0;
-}
-.ai-key-input-row {
-  display: flex;
-  gap: 6px;
-  width: 100%;
-}
-.ai-key-input {
-  flex: 1;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--r-sm);
-  padding: 0.55rem 0.75rem;
-  color: var(--text);
-  font-family: var(--mono);
-  font-size: 0.78rem;
-  transition: border-color 0.2s;
-}
-.ai-key-input:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-.ai-key-input::placeholder {
-  color: var(--text-dim);
-}
-.ai-key-save-btn {
-  background: var(--accent);
-  color: #050505;
-  border: none;
-  border-radius: var(--r-sm);
-  padding: 0.55rem 1.1rem;
-  font-size: 0.78rem;
-  font-weight: 600;
-  font-family: var(--sans);
-  cursor: pointer;
-  white-space: nowrap;
-  transition:
-    opacity 0.2s,
-    transform 0.15s;
-}
-.ai-key-save-btn:hover:not(:disabled) {
-  opacity: 0.88;
-  transform: translateY(-1px);
-}
-.ai-key-save-btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-.ai-key-link {
-  font-size: 0.75rem;
-  color: var(--text-dim);
-  line-height: 1.5;
-}
-.ai-key-link a {
-  color: var(--accent);
-  text-decoration: none;
-}
-.ai-key-link a:hover {
-  text-decoration: underline;
-}
-
-/* ── Key management row (when key is set) ────────────────────────────── */
-.ai-key-manage {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0.5rem 0.65rem;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--r-sm);
-  animation: fadeIn 0.2s ease;
-  flex-shrink: 0;
-}
-.ai-key-masked {
-  flex: 1;
-  font-family: var(--mono);
-  font-size: 0.7rem;
-  color: var(--text-dim);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.ai-key-btn {
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  color: var(--text-dim);
-  font-size: 0.68rem;
-  padding: 2px 8px;
-  cursor: pointer;
-  transition: 0.15s;
-  white-space: nowrap;
-}
-.ai-key-btn:hover {
-  border-color: var(--border-mid);
-  color: var(--text);
-}
-.ai-key-btn.danger:hover {
-  border-color: rgba(224, 82, 82, 0.4);
-  color: var(--red);
-}
-
-/* ── Settings gear ─────────────────────────────────────────────────────── */
-.ai-settings-btn {
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  font-size: 0.9rem;
-  width: 26px;
-  height: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: 0.15s;
-}
-.ai-settings-btn:hover {
-  background: var(--surface-2);
-  color: var(--text);
-}
-
 /* ── Scope toggle (This Page / Full Document) ─────────────────────────── */
 .ai-scope-toggle {
   display: flex;
@@ -3408,157 +3211,27 @@ h5.ai-heading {
   flex: 1;
 }
 
-/* ==========================================================================
-   AI COMING SOON PANEL
-   ========================================================================== */
-.ai-coming-soon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem 1rem;
-  height: 100%;
-  min-height: 400px;
-}
+/* ── Tab Wrappers (The Scrolling Fix) ──────────────────────────────────── */
 
-.ai-cs-inner {
+/* 1. Chat Tab: Locked in place, inner messages scroll */
+.ai-chat-tab {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+/* 2. Quiz Tab: The entire tab scrolls */
+.ai-quiz-tab {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow-y: auto; /* This enables the scrolling */
   gap: 0.85rem;
-  max-width: 280px;
-}
-
-.ai-cs-icon {
-  margin-bottom: 0.25rem;
-}
-
-.ai-cs-badge {
-  display: inline-block;
-  font-family: var(--mono);
-  font-size: 0.6rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 1px solid var(--border-accent);
-  padding: 3px 10px;
-  border-radius: 100px;
-}
-
-.ai-cs-title {
-  font-family: var(--serif);
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: var(--text);
-  letter-spacing: -0.02em;
-}
-
-.ai-cs-desc {
-  font-size: 0.82rem;
-  color: var(--text-dim);
-  line-height: 1.55;
-}
-
-.ai-cs-desc strong {
-  color: var(--text-mid);
-  font-weight: 500;
-}
-
-.ai-cs-features {
-  list-style: none;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  padding: 0.75rem;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-}
-
-.ai-cs-feature {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.78rem;
-  color: var(--text-mid);
-  text-align: left;
-}
-
-.ai-cs-feature-icon {
-  color: var(--accent);
-  font-size: 0.7rem;
-  flex-shrink: 0;
-  width: 14px;
-  text-align: center;
-}
-
-.ai-cs-cta {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.6rem;
-  width: 100%;
-  padding-top: 0.25rem;
-  border-top: 1px solid var(--border);
-}
-
-.ai-cs-price {
-  display: flex;
-  align-items: baseline;
-  gap: 3px;
-}
-
-.ai-cs-price-amount {
-  font-family: var(--serif);
-  font-size: 2rem;
-  color: var(--text);
-  line-height: 1;
-}
-
-.ai-cs-price-period {
-  font-family: var(--mono);
-  font-size: 0.72rem;
-  color: var(--text-dim);
-}
-
-.ai-cs-btn {
-  width: 100%;
-  padding: 0.7rem;
-  background: var(--accent);
-  color: #050505;
-  border: none;
-  border-radius: var(--r-sm);
-  font-size: 0.78rem;
-  font-weight: 600;
-  font-family: var(--sans);
-  opacity: 0.65;
-  cursor: not-allowed;
-  transition: opacity 0.2s;
-}
-
-.ai-cs-footnote {
-  font-family: var(--mono);
-  font-size: 0.62rem;
-  color: var(--text-dim);
-  line-height: 1.5;
-}
-
-/* ── Sidebar Soon badge ────────────────────────────────────────────────── */
-.nav-soon-badge {
-  margin-left: auto;
-  font-family: var(--mono);
-  font-size: 0.55rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 1px solid var(--border-accent);
-  padding: 1px 6px;
-  border-radius: 100px;
+  padding-right: 4px; /* Gives the scrollbar breathing room */
 }
 
 /* ==========================================================================
@@ -3673,291 +3346,6 @@ h5.ai-heading {
   color: var(--text);
 }
 
-/* ── AI subscription gate extras ─────────────────────────────────────── */
-.ai-cs-btn-live {
-  width: 100%;
-  padding: 0.75rem;
-  background: var(--accent);
-  color: #050505;
-  border: none;
-  border-radius: var(--r-sm);
-  font-size: 0.82rem;
-  font-weight: 600;
-  font-family: var(--sans);
-  transition:
-    opacity 0.2s,
-    transform 0.15s;
-  cursor: pointer;
-}
-.ai-cs-btn-live:hover:not(:disabled) {
-  opacity: 0.88;
-  transform: translateY(-1px);
-}
-.ai-cs-btn-live:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.ai-cs-error {
-  font-size: 0.75rem;
-  color: var(--red);
-  background: rgba(224, 82, 82, 0.08);
-  border: 1px solid rgba(224, 82, 82, 0.2);
-  border-radius: var(--r-sm);
-  padding: 6px 10px;
-  width: 100%;
-  text-align: center;
-}
-
-/* ── Subscription active badge + manage button ─────────────────────────── */
-.ai-cs-badge--active {
-  color: var(--green) !important;
-  border-color: rgba(34, 197, 94, 0.3) !important;
-  background: rgba(34, 197, 94, 0.08) !important;
-}
-
-.ai-cs-btn-manage {
-  width: 100%;
-  padding: 0.65rem;
-  background: transparent;
-  color: var(--text-mid);
-  border: 1px solid var(--border-mid);
-  border-radius: var(--r-sm);
-  font-size: 0.78rem;
-  font-weight: 500;
-  font-family: var(--sans);
-  cursor: pointer;
-  transition:
-    border-color 0.2s,
-    color 0.2s;
-}
-.ai-cs-btn-manage:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-/* ==========================================================================
-   FREE TIER AI PANEL
-   ========================================================================== */
-
-/* Free indicator dot — amber instead of green */
-.ai-indicator.free {
-  background: var(--amber);
-  box-shadow: 0 0 6px rgba(217, 119, 6, 0.4);
-  animation: pulse-ai 2.5s ease-in-out infinite;
-}
-
-/* "On-device" badge next to title */
-.ai-free-badge {
-  font-family: var(--mono);
-  font-size: 0.58rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--amber);
-  background: rgba(217, 119, 6, 0.08);
-  border: 1px solid rgba(217, 119, 6, 0.25);
-  padding: 2px 8px;
-  border-radius: 100px;
-}
-
-/* ── Document stats row ──────────────────────────────────────────────────── */
-.ai-stats-row {
-  display: flex;
-  gap: 0;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.ai-stat {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 0.6rem 0.4rem;
-  border-right: 1px solid var(--border);
-  gap: 2px;
-}
-
-.ai-stat:last-child {
-  border-right: none;
-}
-
-.ai-stat-num {
-  font-family: var(--serif);
-  font-size: 1.1rem;
-  color: var(--text);
-  line-height: 1;
-  font-weight: 600;
-}
-
-.ai-stat-label {
-  font-family: var(--mono);
-  font-size: 0.58rem;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-/* ── Keywords ────────────────────────────────────────────────────────────── */
-.ai-keywords {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  flex-shrink: 0;
-}
-
-.ai-keywords-label {
-  font-family: var(--mono);
-  font-size: 0.6rem;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
-.ai-keyword-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.ai-keyword-chip {
-  font-family: var(--mono);
-  font-size: 0.65rem;
-  color: var(--text-mid);
-  background: var(--surface-3);
-  border: 1px solid var(--border);
-  padding: 2px 8px;
-  border-radius: 100px;
-  transition:
-    border-color 0.2s,
-    color 0.2s;
-}
-
-.ai-keyword-chip:hover {
-  border-color: var(--border-mid);
-  color: var(--text);
-}
-
-/* ── Q&A result ──────────────────────────────────────────────────────────── */
-.ai-qa-result {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-sm);
-  padding: 0.65rem 0.85rem;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.ai-qa-result.not-found {
-  border-color: rgba(217, 119, 6, 0.25);
-  background: rgba(217, 119, 6, 0.04);
-}
-
-.ai-qa-answer {
-  font-size: 0.85rem;
-  color: var(--text);
-  line-height: 1.6;
-  font-weight: 400;
-}
-
-.ai-qa-confidence {
-  font-family: var(--mono);
-  font-size: 0.62rem;
-  color: var(--text-dim);
-}
-
-/* ── Error message ───────────────────────────────────────────────────────── */
-.ai-error-msg {
-  font-size: 0.78rem;
-  color: var(--red);
-  background: rgba(224, 82, 82, 0.07);
-  border: 1px solid rgba(224, 82, 82, 0.18);
-  border-radius: var(--r-sm);
-  padding: 0.5rem 0.75rem;
-  flex-shrink: 0;
-}
-
-/* ── First-load notice ───────────────────────────────────────────────────── */
-.ai-free-notice {
-  display: flex;
-  align-items: flex-start;
-  gap: 7px;
-  padding: 0.6rem 0.75rem;
-  background: rgba(217, 119, 6, 0.05);
-  border: 1px solid rgba(217, 119, 6, 0.15);
-  border-radius: var(--r-sm);
-  font-size: 0.72rem;
-  color: var(--amber);
-  line-height: 1.5;
-  flex-shrink: 0;
-}
-
-/* ── Upgrade card ────────────────────────────────────────────────────────── */
-.ai-upgrade-card {
-  background: var(--accent-bg);
-  border: 1px solid var(--border-accent);
-  border-radius: var(--r);
-  padding: 0.85rem;
-  flex-shrink: 0;
-}
-
-.ai-upgrade-card-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.6rem;
-}
-
-.ai-upgrade-card-title {
-  font-family: var(--mono);
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--accent);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
-.ai-upgrade-price {
-  font-family: var(--serif);
-  font-size: 1rem;
-  color: var(--accent);
-  font-weight: 600;
-}
-
-.ai-upgrade-features {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.ai-upgrade-feature {
-  font-size: 0.75rem;
-  color: var(--text-mid);
-}
-
-/* ── Subscribe footer ────────────────────────────────────────────────────── */
-.ai-subscribe-footer {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.85rem;
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
-  background: var(--surface);
-}
-
-/* ── Manage subscription row ─────────────────────────────────────────────── */
-.ai-manage-row {
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
 /* ==========================================================================
    FILE VIEWER — MOBILE FIXES
    Append to bottom of index.css
@@ -4044,10 +3432,20 @@ h5.ai-heading {
 
   /* AI panel sits below doc, not beside it */
   .fv-ai-side {
-    border-left: none;
-    border-top: 1px solid var(--border);
-    width: 100%;
-    flex-shrink: 0;
+    display: flex; /* ADD THIS */
+    flex-direction: column; /* ADD THIS */
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 85%;
+    max-width: 360px;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    border-top: none;
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    animation: slideInDrawer 0.35s var(--ease) forwards;
   }
 
   /* File viewer — already handled by the base fixed overlay styles */
@@ -4093,6 +3491,16 @@ h5.ai-heading {
 }
 
 @media (max-width: 768px) {
+  .file-viewer {
+    position: fixed;
+    inset: 0;
+    z-index: 600;
+    height: 100vh;
+    height: 100dvh;
+
+    overflow: hidden;
+  }
+
   .fv-mobile-ai-bar {
     display: flex;
     align-items: center;
@@ -4142,5 +3550,89 @@ h5.ai-heading {
 
   .fv-mobile-ai-close:hover {
     color: var(--text);
+  }
+}
+
+/* ==========================================================================
+   MOBILE BOTTOM NAVIGATION
+   ========================================================================== */
+.bottom-nav {
+  display: none; /* Hidden by default on desktop/tablet */
+}
+
+@media (max-width: 768px) {
+  .bottom-nav {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 65px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+
+    /* Crucial for modern PWAs: accounts for iOS/Android home indicators */
+    padding-bottom: env(safe-area-inset-bottom);
+    box-sizing: content-box;
+    z-index: 200;
+  }
+
+  .bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    flex: 1;
+    height: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-family: var(--sans);
+    transition: color 0.2s var(--ease);
+    cursor: pointer;
+  }
+
+  .bottom-nav-item span {
+    font-size: 0.65rem;
+    font-weight: 500;
+  }
+
+  .icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--r-sm);
+    transition: background 0.2s var(--ease);
+  }
+
+  .bottom-nav-item svg {
+    width: 20px;
+    height: 20px;
+    stroke-width: 2;
+    transition: stroke 0.2s var(--ease);
+  }
+
+  /* Active State matches your Accent Color */
+  .bottom-nav-item.active {
+    color: var(--accent);
+  }
+
+  .bottom-nav-item.active .icon-wrapper {
+    background: var(--accent-bg);
+  }
+
+  /* Ensure the main scrollable area clears both the top and bottom bars */
+  .main-content {
+    padding-bottom: calc(85px + env(safe-area-inset-bottom));
+  }
+
+  /* Hide the hamburger icon in the top nav since we have bottom nav */
+  .hamburger {
+    display: none !important;
   }
 }
