@@ -44,7 +44,7 @@ function checkRateLimit(ip) {
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────
-export default async function handler(req, res) {
+async function handler(req, res) {
   setCORS(req, res);
 
   // Handle preflight
@@ -102,22 +102,18 @@ export default async function handler(req, res) {
 
     if (mistralRes.status === 401) {
       console.error("Mistral auth error");
-      return res
-        .status(502)
-        .json({
-          error: "INVALID_KEY",
-          message: "AI service authentication failed.",
-        });
+      return res.status(502).json({
+        error: "INVALID_KEY",
+        message: "AI service authentication failed.",
+      });
     }
 
     if (mistralRes.status === 429) {
       console.warn("Mistral rate limited");
-      return res
-        .status(429)
-        .json({
-          error: "RATE_LIMIT",
-          message: "AI rate limit reached. Please wait.",
-        });
+      return res.status(429).json({
+        error: "RATE_LIMIT",
+        message: "AI rate limit reached. Please wait.",
+      });
     }
 
     if (!mistralRes.ok) {
@@ -132,12 +128,10 @@ export default async function handler(req, res) {
     const result = data.choices?.[0]?.message?.content;
 
     if (!result) {
-      return res
-        .status(502)
-        .json({
-          error: "EMPTY_RESPONSE",
-          message: "AI returned an empty response.",
-        });
+      return res.status(502).json({
+        error: "EMPTY_RESPONSE",
+        message: "AI returned an empty response.",
+      });
     }
 
     return res.status(200).json({ result });
@@ -148,3 +142,5 @@ export default async function handler(req, res) {
       .json({ error: "SERVER_ERROR", message: "Internal server error." });
   }
 }
+
+module.exports = handler;
