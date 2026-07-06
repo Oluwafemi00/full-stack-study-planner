@@ -60,6 +60,51 @@ function formatAIResponse(text) {
     });
 }
 
+// ── Loading messages per action ───────────────────────────────────────────
+const LOADING_MESSAGES = {
+  summarise: [
+    "Reading document…",
+    "Identifying key themes…",
+    "Writing summary…",
+  ],
+  quiz: ["Reading document…", "Crafting questions…", "Almost ready…"],
+  explain: ["Analysing selection…", "Preparing explanation…"],
+  chat: ["Thinking…", "Composing answer…"],
+};
+
+function useLoadingMessage(loadingType) {
+  const [msgIndex, setMsgIndex] = useState(0);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    setMsgIndex(0);
+    if (!loadingType) return;
+    const messages = LOADING_MESSAGES[loadingType] || ["Thinking…"];
+    if (messages.length <= 1) return;
+
+    timerRef.current = setInterval(() => {
+      setMsgIndex((prev) => Math.min(prev + 1, messages.length - 1));
+    }, 2200);
+
+    return () => clearInterval(timerRef.current);
+  }, [loadingType]);
+
+  if (!loadingType) return "";
+  const messages = LOADING_MESSAGES[loadingType] || ["Thinking…"];
+  return messages[msgIndex] || messages[messages.length - 1];
+}
+
+// ── Document stats (instant, no AI needed) ────────────────────────────────
+function getDocStats(text) {
+  if (!text || text.length < 20) return null;
+  const words = text.trim().split(/\s+/).filter(Boolean).length;
+  const minutes = Math.ceil(words / 200);
+  return {
+    words: words.toLocaleString(),
+    readTime: minutes < 1 ? "<1 min" : `${minutes} min read`,
+  };
+}
+
 export default function AiAssistant({
   documentText,
   fileName,
@@ -72,64 +117,86 @@ export default function AiAssistant({
   const [messages, setMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingType, setLoadingType] = useState("");
   const [quiz, setQuiz] = useState(null);
   const [quizCount, setQuizCount] = useState(5);
   const [summary, setSummary] = useState(null);
   const [scope, setScope] = useState("page");
 
+  // Prevent double-fire on quick actions
+  const actionLock = useRef(false);
   const messagesRef = useRef(null);
 
-  // Auto-scroll messages intelligently
+  const loadingMessage = useLoadingMessage(loadingType);
+
+  // ── Auto-scroll ──────────────────────────────────────────────────────────
   useEffect(() => {
     const container = messagesRef.current;
     if (!container) return;
-
     if (loading) {
-      // 1. User sent a message: scroll to absolute bottom to show typing indicator
       container.scrollTop = container.scrollHeight;
     } else if (messages.length > 0) {
-      // 2. AI finished generating: find the newest message
-      const lastMessage = container.lastElementChild;
-
-      if (lastMessage && lastMessage.classList.contains("assistant")) {
-        // 3. Scroll the TOP of the AI's message into view smoothly
-        lastMessage.scrollIntoView({ behavior: "smooth", block: "start" });
+      const last = container.lastElementChild;
+      if (last?.classList.contains("assistant")) {
+        last.scrollIntoView({ behavior: "smooth", block: "start" });
       } else {
-        // Fallback for user messages or empty states
         container.scrollTop = container.scrollHeight;
       }
     }
   }, [messages, loading]);
 
-  // Reset quiz and summary when scope changes
+  // ── Reset on scope change ────────────────────────────────────────────────
   useEffect(() => {
     setQuiz(null);
     setSummary(null);
   }, [scope]);
 
+  // ── Auto-fill explain when text is selected ──────────────────────────────
+  useEffect(() => {
+    if (selectedText && selectedText.length > 10 && activeTab === "chat") {
+      const snippet =
+        selectedText.length > 120
+          ? selectedText.slice(0, 120) + "…"
+          : selectedText;
+      setChatInput(`Explain: "${snippet}"`);
+    }
+  }, [selectedText]);
+
   const getContextText = useCallback(() => {
-    // If we are looking at a PDF (pageTexts exists) and scope is "page"
     if (scope === "page" && pageTexts?.length > 0) {
       const text = pageTexts[currentPage - 1];
-      // Return the specific page text. If it's literally empty, tell the AI that.
-      return text
-        ? text
-        : "This page contains no readable text or is still loading.";
+      return text || "This page contains no readable text or is still loading.";
     }
-
-    // For DOCX files (which don't have pages) or if scope is "full", return everything
     return documentText;
   }, [scope, pageTexts, currentPage, documentText]);
 
-  // ── Chat ────────────────────────────────────────────────────────────────
+  const docStats = getDocStats(getContextText());
+
+  // ── Shared loading guard ─────────────────────────────────────────────────
+  function startLoading(type) {
+    if (loading || actionLock.current) return false;
+    actionLock.current = true;
+    setLoading(true);
+    setLoadingType(type);
+    return true;
+  }
+
+  function stopLoading() {
+    setLoading(false);
+    setLoadingType("");
+    setTimeout(() => {
+      actionLock.current = false;
+    }, 300);
+  }
+
+  // ── Chat ─────────────────────────────────────────────────────────────────
   const handleSendChat = useCallback(async () => {
     const input = chatInput.trim();
-    if (!input || loading) return;
+    if (!input || !startLoading("chat")) return;
 
     const userMsg = { role: "user", content: input };
     setMessages((prev) => [...prev, userMsg]);
     setChatInput("");
-    setLoading(true);
 
     try {
       const response = await chatWithDocument(
@@ -141,30 +208,30 @@ export default function AiAssistant({
         ...prev,
         { role: "assistant", content: response },
       ]);
+      onClearSelection?.();
     } catch (err) {
       setMessages((prev) => [
         ...prev,
         { role: "error", content: getErrorMessage(err) },
       ]);
     } finally {
-      setLoading(false);
+      stopLoading();
     }
   }, [chatInput, loading, getContextText, messages]);
 
-  // ── Explain selection ───────────────────────────────────────────────────
+  // ── Explain selection ────────────────────────────────────────────────────
   const handleExplainSelection = useCallback(async () => {
-    if (!selectedText || loading) return;
+    if (!selectedText || !startLoading("explain")) return;
 
     const snippet =
       selectedText.length > 200
         ? selectedText.slice(0, 200) + "..."
         : selectedText;
-
     setMessages((prev) => [
       ...prev,
       { role: "user", content: `Explain: "${snippet}"` },
     ]);
-    setLoading(true);
+    setChatInput("");
 
     try {
       const response = await explainText(
@@ -182,14 +249,13 @@ export default function AiAssistant({
         { role: "error", content: getErrorMessage(err) },
       ]);
     } finally {
-      setLoading(false);
+      stopLoading();
     }
   }, [selectedText, loading, documentText, onClearSelection]);
 
-  // ── Quiz ────────────────────────────────────────────────────────────────
+  // ── Quiz ─────────────────────────────────────────────────────────────────
   const handleGenerateQuiz = useCallback(async () => {
-    if (loading) return;
-    setLoading(true);
+    if (!startLoading("quiz")) return;
     setQuiz(null);
 
     try {
@@ -209,35 +275,32 @@ export default function AiAssistant({
         ...prev,
         { role: "error", content: getErrorMessage(err) },
       ]);
+      setActiveTab("chat");
     } finally {
-      setLoading(false);
+      stopLoading();
     }
   }, [loading, scope, pageTexts, currentPage, documentText, quizCount]);
 
-  const handleQuizAnswer = useCallback(
-    (qIndex, optIndex) => {
-      if (!quiz || quiz.submitted) return;
-      setQuiz((prev) => ({
-        ...prev,
-        answers: { ...prev.answers, [qIndex]: optIndex },
-      }));
-    },
-    [quiz],
-  );
+  const handleQuizAnswer = (qIndex, optIndex) => {
+    if (!quiz || quiz.submitted) return;
+    setQuiz((prev) => ({
+      ...prev,
+      answers: { ...prev.answers, [qIndex]: optIndex },
+    }));
+  };
 
-  const handleQuizSubmit = useCallback(() => {
+  const handleQuizSubmit = () => {
     if (!quiz || quiz.submitted) return;
     let score = 0;
     quiz.questions.forEach((q, i) => {
       if (quiz.answers[i] === q.correct) score++;
     });
     setQuiz((prev) => ({ ...prev, submitted: true, score }));
-  }, [quiz]);
+  };
 
-  // ── Summary ─────────────────────────────────────────────────────────────
+  // ── Summary ──────────────────────────────────────────────────────────────
   const handleSummarize = useCallback(async () => {
-    if (loading) return;
-    setLoading(true);
+    if (!startLoading("summarise")) return;
     setSummary(null);
 
     try {
@@ -252,34 +315,33 @@ export default function AiAssistant({
         ...prev,
         { role: "error", content: getErrorMessage(err) },
       ]);
+      setActiveTab("chat");
     } finally {
-      setLoading(false);
+      stopLoading();
     }
   }, [loading, scope, pageTexts, currentPage, documentText]);
 
-  const handleQuickSummarize = useCallback(() => {
+  const handleQuickSummarize = () => {
     setActiveTab("summary");
-    setTimeout(() => handleSummarize(), 50);
-  }, [handleSummarize]);
+    setSummary(null);
+    setTimeout(handleSummarize, 50);
+  };
 
-  const handleQuickQuiz = useCallback(() => {
+  const handleQuickQuiz = () => {
     setActiveTab("quiz");
-    setTimeout(() => handleGenerateQuiz(), 50);
-  }, [handleGenerateQuiz]);
+    setQuiz(null);
+    setTimeout(handleGenerateQuiz, 50);
+  };
 
-  const handleChatKeyDown = useCallback(
-    (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        handleSendChat();
-      }
-    },
-    [handleSendChat],
-  );
+  const handleChatKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendChat();
+    }
+  };
 
   // ── Scope toggle ─────────────────────────────────────────────────────────
   const renderScopeToggle = () => {
-    // Hide the toggle entirely if it's a DOCX file (no page array)
     if (!pageTexts || pageTexts.length === 0) return null;
     return (
       <div className="ai-scope-toggle">
@@ -299,7 +361,18 @@ export default function AiAssistant({
     );
   };
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // ── Loading overlay ───────────────────────────────────────────────────────
+  const renderLoadingState = () => (
+    <div className="ai-loading-state">
+      <div className="ai-loading-dots">
+        <span />
+        <span />
+        <span />
+      </div>
+      <p className="ai-loading-msg">{loadingMessage}</p>
+    </div>
+  );
+
   return (
     <div className="ai-panel">
       {/* Header */}
@@ -308,6 +381,13 @@ export default function AiAssistant({
           <span className="ai-indicator" />
           <span className="ai-title">AI Study Buddy</span>
         </div>
+        {docStats && (
+          <div className="ai-doc-stats">
+            <span>{docStats.words} words</span>
+            <span className="ai-stats-dot">·</span>
+            <span>{docStats.readTime}</span>
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
@@ -335,8 +415,8 @@ export default function AiAssistant({
       {/* ── Chat Tab ── */}
       {activeTab === "chat" && (
         <div className="ai-chat-tab">
-          {/* Add the scope toggle here so it governs the chat context too */}
           {renderScopeToggle()}
+
           <div className="ai-quick-actions">
             <button
               className="ai-action-btn"
@@ -358,29 +438,45 @@ export default function AiAssistant({
                 onClick={handleExplainSelection}
                 disabled={loading}
               >
-                → Explain Selection
+                → Explain
               </button>
             )}
           </div>
-          {/* Ask me anything about this <strong>{fileName}</strong> */}
+
           <div className="ai-messages" ref={messagesRef}>
             {messages.length === 0 && !loading ? (
               <div className="ai-empty">
-                <p>Need help understanding this page?. Try:</p>
-                {[
-                  // "What is this document about?",
-                  "Explain this page?",
-                  "Give me the key takeaways",
-                  "Explain the main concepts",
-                ].map((suggestion, i) => (
-                  <button
-                    key={i}
-                    className="ai-suggestion"
-                    onClick={() => setChatInput(suggestion)}
-                  >
-                    {suggestion}
-                  </button>
-                ))}
+                <div className="ai-welcome-text">
+                  <span className="ai-sparkle">✨</span>
+                  <p>
+                    I'm ready to help you study{" "}
+                    <span className="ai-filename-badge" title={fileName}>
+                      {fileName.length > 25
+                        ? fileName.substring(0, 25) + "..."
+                        : fileName}
+                    </span>
+                  </p>
+                </div>
+                <div className="ai-suggestions-list">
+                  <span className="suggestions-label">Try asking:</span>
+                  {[
+                    { text: "Explain this page", icon: "📄" },
+                    { text: "Give me the key takeaways", icon: "💡" },
+                    { text: "Explain the main concepts", icon: "🧠" },
+                  ].map((s, i) => (
+                    <button
+                      key={i}
+                      className="ai-suggestion-btn"
+                      onClick={() => setChatInput(s.text)}
+                    >
+                      <div className="suggestion-left">
+                        <span className="suggestion-icon">{s.icon}</span>
+                        <span>{s.text}</span>
+                      </div>
+                      <span className="suggestion-arrow">→</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             ) : (
               <>
@@ -398,13 +494,7 @@ export default function AiAssistant({
                     </div>
                   </div>
                 ))}
-                {loading && (
-                  <div className="ai-typing">
-                    <span />
-                    <span />
-                    <span />
-                  </div>
-                )}
+                {loading && renderLoadingState()}
               </>
             )}
           </div>
@@ -416,7 +506,11 @@ export default function AiAssistant({
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               onKeyDown={handleChatKeyDown}
-              placeholder="Need an explanation?"
+              placeholder={
+                selectedText
+                  ? "Ask about your selection…"
+                  : "Need an explanation?"
+              }
               disabled={loading}
             />
             <button
@@ -424,7 +518,11 @@ export default function AiAssistant({
               onClick={handleSendChat}
               disabled={loading || !chatInput.trim()}
             >
-              ➤
+              {loading && loadingType === "chat" ? (
+                <span className="ai-send-spinner" />
+              ) : (
+                "➤"
+              )}
             </button>
           </div>
         </div>
@@ -462,12 +560,7 @@ export default function AiAssistant({
             </div>
           )}
 
-          {loading && !quiz && (
-            <div className="ai-centered-loading">
-              <div className="ai-spin lg" />
-              <p>Generating questions...</p>
-            </div>
-          )}
+          {loading && !quiz && renderLoadingState()}
 
           {quiz && (
             <div className="ai-quiz-content">
@@ -495,20 +588,18 @@ export default function AiAssistant({
                     <div className="quiz-options">
                       {q.options.map((opt, oi) => {
                         const letters = ["A", "B", "C", "D"];
-                        const isSelected = quiz.answers[qi] === oi;
-                        const isCorrect = q.correct === oi;
-                        let optClass = "quiz-option";
-                        if (!quiz.submitted && isSelected)
-                          optClass += " selected";
+                        let cls = "quiz-option";
+                        if (!quiz.submitted && quiz.answers[qi] === oi)
+                          cls += " selected";
                         if (quiz.submitted) {
-                          if (isCorrect) optClass += " correct";
-                          else if (isSelected && !isCorrect)
-                            optClass += " wrong";
+                          if (q.correct === oi) cls += " correct";
+                          else if (quiz.answers[qi] === oi && q.correct !== oi)
+                            cls += " wrong";
                         }
                         return (
                           <button
                             key={oi}
-                            className={optClass}
+                            className={cls}
                             onClick={() => handleQuizAnswer(qi, oi)}
                             disabled={quiz.submitted}
                           >
@@ -578,19 +669,18 @@ export default function AiAssistant({
             </button>
           )}
 
-          {loading && !summary && (
-            <div className="ai-centered-loading">
-              <div className="ai-spin lg" />
-              <p>Analyzing document...</p>
-            </div>
-          )}
+          {loading && !summary && renderLoadingState()}
 
           {summary && (
             <>
               <div className="ai-summary-content">
                 {formatAIResponse(summary)}
               </div>
-              <button className="ai-regenerate-btn" onClick={handleSummarize}>
+              <button
+                className="ai-regenerate-btn"
+                onClick={handleSummarize}
+                disabled={loading}
+              >
                 ↻ Regenerate
               </button>
             </>

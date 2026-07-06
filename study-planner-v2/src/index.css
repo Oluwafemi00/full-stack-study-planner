@@ -2649,12 +2649,38 @@ a {
 .ai-empty {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 1.25rem;
   padding: 1rem 0;
-  color: var(--text-dim);
+  animation: fadeIn 0.3s ease;
 }
 .ai-empty p {
   font-size: 0.82rem;
+}
+
+.ai-welcome-text {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--text);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.ai-sparkle {
+  font-size: 1rem;
+  margin-top: 2px;
+}
+
+/* Styles the filename so it looks like a variable, not a messy sentence */
+.ai-filename-badge {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border-mid);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--accent);
+  white-space: nowrap;
 }
 
 .ai-suggestions {
@@ -2675,6 +2701,72 @@ a {
 .ai-suggestion:hover {
   border-color: var(--border-mid);
   color: var(--text);
+}
+
+.ai-suggestions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.suggestions-label {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
+}
+
+/* Premium, clickable suggestion pills */
+.ai-suggestion-btn {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--text-mid);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.suggestion-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.suggestion-icon {
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+.suggestion-arrow {
+  color: var(--text-dim);
+  font-family: var(--mono);
+  opacity: 0;
+  transform: translateX(-5px);
+  transition: all 0.2s var(--ease);
+}
+
+/* Hover effects to make it feel alive */
+.ai-suggestion-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  color: var(--text);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.ai-suggestion-btn:hover .suggestion-arrow {
+  opacity: 1;
+  transform: translateX(0);
+  color: var(--accent);
 }
 
 .ai-msg {
@@ -3876,4 +3968,137 @@ h5.ai-heading {
   .feedback-modal {
     width: auto;
   }
+}
+
+/* ==========================================================================
+   AI ASSISTANT — UX ADDITIONS
+   Append to bottom of index.css
+   ========================================================================== */
+
+/* ── Doc stats in header ─────────────────────────────────────────────────── */
+.ai-doc-stats {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  color: var(--text-dim);
+}
+.ai-stats-dot {
+  opacity: 0.4;
+}
+
+/* ── Loading state ───────────────────────────────────────────────────────── */
+.ai-loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2rem 1rem;
+}
+
+.ai-loading-dots {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.ai-loading-dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.3;
+  animation: ai-dot-bounce 1.4s ease-in-out infinite;
+}
+.ai-loading-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.ai-loading-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes ai-dot-bounce {
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.35);
+  }
+}
+
+.ai-loading-msg {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  font-style: italic;
+  animation: ai-msg-fade 0.4s ease;
+}
+
+@keyframes ai-msg-fade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Send button spinner ─────────────────────────────────────────────────── */
+.ai-send-spinner {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+/* ==========================================================================
+   PDF TEXT LAYER (SELECTION ENABLED)
+   ========================================================================== */
+.pdf-page-container {
+  position: relative;
+  margin: 0 auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+
+.pdf-page-container canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+.textLayer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  opacity: 0.2; /* Change this to 0 once you verify it lines up! */
+  line-height: 1;
+  color: transparent;
+}
+
+.textLayer span {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+}
+
+.textLayer ::selection {
+  background: rgba(124, 110, 240, 0.3);
+  color: transparent;
 }

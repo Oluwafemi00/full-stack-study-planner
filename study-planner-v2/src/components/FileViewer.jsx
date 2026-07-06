@@ -135,6 +135,8 @@ export default function FileViewer({ file, onBack }) {
     if (!container) return;
 
     container.innerHTML = "";
+
+    const pdfjs = await waitForGlobal("pdfjsLib");
     const page = await pdf.getPage(pageNum);
 
     const dpr = window.devicePixelRatio || 1;
@@ -144,36 +146,54 @@ export default function FileViewer({ file, onBack }) {
     const renderScale = cssScale * dpr;
     const viewport = page.getViewport({ scale: renderScale });
 
+    // 1. Create a positioning wrapper for this page
+    const pageWrapper = document.createElement("div");
+    pageWrapper.className = "pdf-page-container";
+    pageWrapper.style.width = `${Math.floor(viewport.width / dpr)}px`;
+    pageWrapper.style.height = `${Math.floor(viewport.height / dpr)}px`;
+
+    // 2. Setup the Canvas (The Visuals)
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
-
     canvas.width = viewport.width;
     canvas.height = viewport.height;
-    canvas.style.width = `${Math.floor(viewport.width / dpr)}px`;
-    canvas.style.height = `${Math.floor(viewport.height / dpr)}px`;
-    canvas.style.display = "block";
+    pageWrapper.appendChild(canvas);
 
-    container.appendChild(canvas);
-    await page.render({ canvasContext: context, viewport }).promise;
+    // 3. Setup the Text Layer (The Selectable HTML)
+    const textLayerDiv = document.createElement("div");
+    textLayerDiv.className = "textLayer";
+    // PDF.js uses CSS variables to scale the text to match the canvas
+    textLayerDiv.style.setProperty("--scale-factor", renderScale / dpr);
+    pageWrapper.appendChild(textLayerDiv);
+
+    // Mount everything to the DOM
+    container.appendChild(pageWrapper);
+
+    // 4. Render the Canvas Visuals
+    const renderContext = { canvasContext: context, viewport: viewport };
+    await page.render(renderContext).promise;
+
+    // 5. Render the Invisible Text Layer over it
+    const textContent = await page.getTextContent();
+    await pdfjs.renderTextLayer({
+      textContentSource: textContent,
+      container: textLayerDiv,
+      viewport: viewport,
+      textDivs: [],
+    }).promise;
 
     setCurrentPage(pageNum);
 
     // LAZY LOAD TEXT: Extract text for AI only when the user visits this page
     setPageTexts((prev) => {
-      // If we already have the text for this page, do nothing
       if (prev[pageNum - 1]) return prev;
 
-      // Otherwise, extract it asynchronously
-      page.getTextContent().then((content) => {
-        const text = content.items.map((s) => s.str).join(" ");
-        setPageTexts((currentTexts) => {
-          const newTexts = [...currentTexts];
-          newTexts[pageNum - 1] = text;
-          return newTexts;
-        });
-      });
+      // Since we already awaited textContent for the text layer, we can just use it immediately!
+      const text = textContent.items.map((s) => s.str).join(" ");
+      const newTexts = [...prev];
+      newTexts[pageNum - 1] = text;
 
-      return prev;
+      return newTexts;
     });
   }
 
