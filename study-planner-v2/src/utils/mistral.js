@@ -2,7 +2,7 @@
 // All requests go through Express proxy.
 
 const PROXY_URL = (
-  full - stack - study - planner.vercel.app ||
+  "https://full-stack-study-planner.vercel.app" ||
   "https://full-stack-study-planner.onrender.com"
 ).replace(/\/$/, "");
 const MAX_CHUNK_CHARS = 12000;
