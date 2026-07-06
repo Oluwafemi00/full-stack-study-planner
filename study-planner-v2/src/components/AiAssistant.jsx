@@ -266,12 +266,12 @@ export default function AiAssistant({
         >
           This Page
         </button>
-        <button
+        {/* <button
           className={`ai-scope-btn ${scope === "full" ? "active" : ""}`}
           onClick={() => setScope("full")}
         >
           Full Document
-        </button>
+        </button> */}
       </div>
     );
   };
@@ -345,7 +345,8 @@ export default function AiAssistant({
                   Ask me anything about <strong>{fileName}</strong>. Try:
                 </p>
                 {[
-                  "What is this document about?",
+                  // "What is this document about?",
+                  "What is this page about?",
                   "Give me the key takeaways",
                   "Explain the main concepts",
                 ].map((suggestion, i) => (
