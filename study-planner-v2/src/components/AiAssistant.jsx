@@ -283,7 +283,7 @@ export default function AiAssistant({
       <div className="ai-header">
         <div className="ai-header-left">
           <span className="ai-indicator" />
-          <span className="ai-title">AI ASSISTANT</span>
+          <span className="ai-title">AI Study Buddy</span>
         </div>
       </div>
 
@@ -337,16 +337,14 @@ export default function AiAssistant({
               </button>
             )}
           </div>
-
+          {/* Ask me anything about this <strong>{fileName}</strong> */}
           <div className="ai-messages" ref={messagesRef}>
             {messages.length === 0 && !loading ? (
               <div className="ai-empty">
-                <p>
-                  Ask me anything about <strong>{fileName}</strong>. Try:
-                </p>
+                <p>Need help understanding this page?. Try:</p>
                 {[
                   // "What is this document about?",
-                  "What is this page about?",
+                  "Explain this page?",
                   "Give me the key takeaways",
                   "Explain the main concepts",
                 ].map((suggestion, i) => (
@@ -393,7 +391,7 @@ export default function AiAssistant({
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               onKeyDown={handleChatKeyDown}
-              placeholder="Ask about this document..."
+              placeholder="Need an explanation?"
               disabled={loading}
             />
             <button
