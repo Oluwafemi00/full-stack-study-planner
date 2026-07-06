@@ -3584,6 +3584,41 @@ h5.ai-heading {
   }
 }
 
+@media (max-width: 768px) {
+  /* 1. Force the root viewer to be a strict flex column tied to the dynamic viewport */
+  .file-viewer {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100dvh !important; /* Accounts for URL bar shrinking/expanding */
+    overflow: hidden !important;
+  }
+
+  /* 2. The split container must fill the remaining space exactly */
+  .fv-split {
+    display: flex !important;
+    flex-direction: row !important; /* Required anchor for the absolute drawer */
+    flex: 1 1 0% !important; /* Grow to fill, shrink if needed, start at 0 */
+    height: 100% !important;
+    min-height: 0 !important; /* CRITICAL: Prevents flex blowouts */
+    position: relative !important;
+    overflow: hidden !important; /* Traps the inner scrolling */
+  }
+
+  /* 3. The document container handles its own independent scroll */
+  .fv-doc-side {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+
+    /* Ensure bottom padding so content isn't trapped behind the nav/home bar */
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
 /* ==========================================================================
    MOBILE BOTTOM NAVIGATION
    ========================================================================== */
