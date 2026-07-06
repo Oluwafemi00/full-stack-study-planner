@@ -3582,6 +3582,16 @@ h5.ai-heading {
     bottom: 0 !important;
     height: 100% !important;
   }
+  /* ── AI Drawer Backdrop ────────────────────────────────────────────────── */
+  .fv-ai-backdrop {
+    position: absolute;
+    inset: 0; /* Stretches to fill the fv-split container */
+    background: rgba(0, 0, 0, 0.4); /* Subtle dim over the document */
+    backdrop-filter: blur(2px); /* Sleek modern blur effect */
+    z-index: 90; /* Sits right behind the drawer (which is z-index 100) */
+    cursor: pointer;
+    animation: fadeIn 0.25s var(--ease);
+  }
 }
 
 @media (max-width: 768px) {

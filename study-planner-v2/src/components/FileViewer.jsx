@@ -305,47 +305,58 @@ export default function FileViewer({ file, onBack }) {
 
         {/* AI side */}
         {aiPanelOpen && (
-          <div className="fv-ai-side">
-            {/* Mobile: show close button at top of AI panel */}
+          <>
+            {/* Mobile Backdrop for clicking outside to close */}
             {isMobile && (
-              <button
-                className="fv-mobile-ai-close"
+              <div
+                className="fv-ai-backdrop"
                 onClick={() => setAiPanelOpen(false)}
-              >
-                ✕ Close AI panel
-              </button>
+                aria-label="Close AI Assistant"
+              />
             )}
-            <AiAssistant
-              documentText={docText}
-              fileName={file.name}
-              selectedText={selectedText}
-              onClearSelection={clearSelection}
-              currentPage={currentPage}
-              pageTexts={pageTexts}
-            />
+
+            <div className="fv-ai-side">
+              {/* Mobile: show close button at top of AI panel */}
+              {isMobile && (
+                <button
+                  className="fv-mobile-ai-close"
+                  onClick={() => setAiPanelOpen(false)}
+                >
+                  ✕ Close AI panel
+                </button>
+              )}
+              <AiAssistant
+                documentText={docText}
+                fileName={file.name}
+                selectedText={selectedText}
+                onClearSelection={clearSelection}
+                currentPage={currentPage}
+                pageTexts={pageTexts}
+              />
+            </div>
+          </>
+        )}
+
+        {/* Floating explain tooltip */}
+        {selectedText && selectionPos && aiPanelOpen && (
+          <div
+            className="fv-selection-tooltip"
+            style={{ top: selectionPos.top - 44, left: selectionPos.left }}
+          >
+            <button
+              className="fv-tooltip-btn"
+              onClick={() =>
+                document.querySelector(".ai-quick-actions .highlight")?.click()
+              }
+            >
+              ◈ Explain this
+            </button>
+            <button className="fv-tooltip-close" onClick={clearSelection}>
+              ✕
+            </button>
           </div>
         )}
       </div>
-
-      {/* Floating explain tooltip */}
-      {selectedText && selectionPos && aiPanelOpen && (
-        <div
-          className="fv-selection-tooltip"
-          style={{ top: selectionPos.top - 44, left: selectionPos.left }}
-        >
-          <button
-            className="fv-tooltip-btn"
-            onClick={() =>
-              document.querySelector(".ai-quick-actions .highlight")?.click()
-            }
-          >
-            ◈ Explain this
-          </button>
-          <button className="fv-tooltip-close" onClick={clearSelection}>
-            ✕
-          </button>
-        </div>
-      )}
     </div>
   );
 }
