@@ -3553,6 +3553,37 @@ h5.ai-heading {
   }
 }
 
+@media (max-width: 768px) {
+  /* 1. Force the main split container to fill the remaining screen */
+  .fv-split {
+    flex: 1 !important;
+    height: 100% !important;
+  }
+
+  /* 2. Force the document side to fill the vertical space */
+  .fv-doc-side {
+    flex: 1 !important;
+    height: 100% !important;
+    min-height: 100% !important; /* Overrides the old 50vh rule */
+  }
+
+  /* 3. Stick the PDF pagination controls to the absolute bottom */
+  .fv-page-nav {
+    position: sticky;
+    bottom: 0;
+    z-index: 50;
+    /* Adds extra padding so the iOS/Android home bar doesn't block the buttons */
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom)) !important;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.05); /* Soft shadow over the document */
+  }
+
+  /* 4. Ensure the AI drawer reaches the absolute bottom */
+  .fv-ai-side {
+    bottom: 0 !important;
+    height: 100% !important;
+  }
+}
+
 /* ==========================================================================
    MOBILE BOTTOM NAVIGATION
    ========================================================================== */
