@@ -104,18 +104,20 @@ export default function FileViewer({ file, onBack }) {
       pdfDocRef.current = pdf;
       setTotalPages(pdf.numPages);
 
-      // Extract text for AI (up to 30 pages) — store per-page for scope toggle
-      let fullText = "";
-      const perPage = [];
-      for (let i = 1; i <= Math.min(pdf.numPages, 30); i++) {
+      // Extract only the first 5 pages upfront for general document context (fast loading)
+      let initialText = "";
+      const initialPageTexts = new Array(pdf.numPages).fill("");
+
+      for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) {
         const page = await pdf.getPage(i);
         const content = await page.getTextContent();
         const pageText = content.items.map((s) => s.str).join(" ");
-        perPage.push(pageText);
-        fullText += pageText + "\n";
+        initialPageTexts[i - 1] = pageText;
+        initialText += pageText + "\n";
       }
-      setDocText(fullText);
-      setPageTexts(perPage);
+
+      setDocText(initialText);
+      setPageTexts(initialPageTexts);
 
       await renderPDFPage(pdf, 1);
       setRenderStatus("ready");
@@ -133,36 +135,46 @@ export default function FileViewer({ file, onBack }) {
     if (!container) return;
 
     container.innerHTML = "";
-
     const page = await pdf.getPage(pageNum);
 
-    // 1. Get the device pixel ratio (2 on Retina, 3 on some mobile screens)
     const dpr = window.devicePixelRatio || 1;
-
-    // 2. Fit the page to the container's CSS width
     const containerWidth = container.clientWidth || window.innerWidth - 32;
     const natural = page.getViewport({ scale: 1 });
     const cssScale = containerWidth / natural.width;
-
-    // 3. Render at full physical resolution (cssScale × dpr)
     const renderScale = cssScale * dpr;
     const viewport = page.getViewport({ scale: renderScale });
 
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
 
-    // Physical pixel dimensions (sharp on HiDPI screens)
     canvas.width = viewport.width;
     canvas.height = viewport.height;
-
-    // CSS dimensions (logical size — keeps layout correct)
     canvas.style.width = `${Math.floor(viewport.width / dpr)}px`;
     canvas.style.height = `${Math.floor(viewport.height / dpr)}px`;
     canvas.style.display = "block";
 
     container.appendChild(canvas);
     await page.render({ canvasContext: context, viewport }).promise;
+
     setCurrentPage(pageNum);
+
+    // LAZY LOAD TEXT: Extract text for AI only when the user visits this page
+    setPageTexts((prev) => {
+      // If we already have the text for this page, do nothing
+      if (prev[pageNum - 1]) return prev;
+
+      // Otherwise, extract it asynchronously
+      page.getTextContent().then((content) => {
+        const text = content.items.map((s) => s.str).join(" ");
+        setPageTexts((currentTexts) => {
+          const newTexts = [...currentTexts];
+          newTexts[pageNum - 1] = text;
+          return newTexts;
+        });
+      });
+
+      return prev;
+    });
   }
 
   async function goToPage(pageNum) {

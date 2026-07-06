@@ -79,10 +79,25 @@ export default function AiAssistant({
 
   const messagesRef = useRef(null);
 
-  // Auto-scroll messages
+  // Auto-scroll messages intelligently
   useEffect(() => {
-    if (messagesRef.current) {
-      messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+    const container = messagesRef.current;
+    if (!container) return;
+
+    if (loading) {
+      // 1. User sent a message: scroll to absolute bottom to show typing indicator
+      container.scrollTop = container.scrollHeight;
+    } else if (messages.length > 0) {
+      // 2. AI finished generating: find the newest message
+      const lastMessage = container.lastElementChild;
+
+      if (lastMessage && lastMessage.classList.contains("assistant")) {
+        // 3. Scroll the TOP of the AI's message into view smoothly
+        lastMessage.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        // Fallback for user messages or empty states
+        container.scrollTop = container.scrollHeight;
+      }
     }
   }, [messages, loading]);
 
@@ -93,9 +108,16 @@ export default function AiAssistant({
   }, [scope]);
 
   const getContextText = useCallback(() => {
-    if (scope === "page" && pageTexts?.length > 0 && currentPage) {
-      return pageTexts[currentPage - 1] || documentText;
+    // If we are looking at a PDF (pageTexts exists) and scope is "page"
+    if (scope === "page" && pageTexts?.length > 0) {
+      const text = pageTexts[currentPage - 1];
+      // Return the specific page text. If it's literally empty, tell the AI that.
+      return text
+        ? text
+        : "This page contains no readable text or is still loading.";
     }
+
+    // For DOCX files (which don't have pages) or if scope is "full", return everything
     return documentText;
   }, [scope, pageTexts, currentPage, documentText]);
 
@@ -257,6 +279,7 @@ export default function AiAssistant({
 
   // ── Scope toggle ─────────────────────────────────────────────────────────
   const renderScopeToggle = () => {
+    // Hide the toggle entirely if it's a DOCX file (no page array)
     if (!pageTexts || pageTexts.length === 0) return null;
     return (
       <div className="ai-scope-toggle">
@@ -266,12 +289,12 @@ export default function AiAssistant({
         >
           This Page
         </button>
-        {/* <button
+        <button
           className={`ai-scope-btn ${scope === "full" ? "active" : ""}`}
           onClick={() => setScope("full")}
         >
           Full Document
-        </button> */}
+        </button>
       </div>
     );
   };
@@ -312,6 +335,8 @@ export default function AiAssistant({
       {/* ── Chat Tab ── */}
       {activeTab === "chat" && (
         <div className="ai-chat-tab">
+          {/* Add the scope toggle here so it governs the chat context too */}
+          {renderScopeToggle()}
           <div className="ai-quick-actions">
             <button
               className="ai-action-btn"

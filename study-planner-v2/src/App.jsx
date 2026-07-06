@@ -9,6 +9,7 @@ import SubjectManager from "./components/SubjectManager";
 import StudyAssistant from "./components/StudyAssistant";
 import BottomNav from "./components/BottomNav";
 import UpdateToast from "./components/UpdateToast";
+import FeedbackWidget from "./components/FeedbackWidget";
 import { isToday } from "./utils/helpers";
 import { initGA, trackPage } from "./utils/analytics";
 
@@ -179,6 +180,7 @@ export default function App() {
       </aside>
 
       <QuickCapture />
+      <FeedbackWidget />
     </div>
   );
 }
