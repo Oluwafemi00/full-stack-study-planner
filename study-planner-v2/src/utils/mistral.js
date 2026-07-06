@@ -1,7 +1,10 @@
 // ── Mistral AI service — proxy edition ───────────────────────────────────
 // All requests go through Express proxy.
 
-const PROXY_URL = "https://full-stack-study-planner.onrender.com";
+const PROXY_URL = (
+  import.meta.env.VITE_AI_PROXY_URL ||
+  "https://full-stack-study-planner.onrender.com"
+).replace(/\/$/, "");
 const MAX_CHUNK_CHARS = 12000;
 
 // ── Core request ──────────────────────────────────────────────────────────
