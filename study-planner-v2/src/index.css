@@ -3475,11 +3475,52 @@ h5.ai-heading {
     white-space: nowrap;
   }
 
-  /* Shorter AI toggle label */
+  /* ── Top Bar AI Toggle (The Single Source of Truth) ── */
   .fv-ai-toggle {
-    padding: 4px 8px;
-    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-mid);
+    color: var(--text);
+    font-size: 0.78rem;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 100px; /* Modern pill shape */
+    transition: all 0.2s var(--ease);
+    white-space: nowrap;
     flex-shrink: 0;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  }
+
+  .fv-ai-toggle:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  /* Pressed/Active state when the drawer is open */
+  .fv-ai-toggle.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .fv-ai-toggle svg {
+    transition: transform 0.2s var(--ease);
+  }
+
+  .fv-ai-toggle.ai-sparkle {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: var(--accent);
+  }
+
+  .fv-ai-toggle:hover svg {
+    transform: scale(1.1); /* Subtle pop on hover */
   }
 
   /* ── PDF canvas must never overflow screen ────────────────────────── */
@@ -3718,6 +3759,56 @@ h5.ai-heading {
 
     /* Ensure bottom padding so content isn't trapped behind the nav/home bar */
     padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* ── Mobile Selection Action Bar ───────────────────────────────────────── */
+  .fv-selection-tooltip {
+    /* Override the inline React styles (top/left) using !important */
+    top: auto !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+
+    /* Pin it to the bottom, sitting safely above the pagination/navigation */
+    bottom: calc(85px + env(safe-area-inset-bottom)) !important;
+
+    /* Convert it into a full-width floating action bar */
+    width: calc(100% - 2rem);
+    max-width: 400px;
+    padding: 0.85rem 1.25rem;
+    justify-content: space-between;
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    box-shadow:
+      0 12px 40px rgba(0, 0, 0, 0.4),
+      0 0 0 2px var(--accent-bg);
+    border-radius: var(--r-lg);
+    z-index: 1000;
+
+    /* Snappy slide-up animation */
+    animation: slideUpActionBar 0.25s var(--ease) forwards !important;
+  }
+
+  .fv-selection-tooltip .fv-tooltip-btn {
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .fv-selection-tooltip .fv-tooltip-close {
+    width: 28px;
+    height: 28px;
+    background: var(--surface-2);
+    border-radius: 50%;
+  }
+
+  @keyframes slideUpActionBar {
+    from {
+      opacity: 0;
+      transform: translate(-50%, 20px);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
   }
 }
 
@@ -4099,6 +4190,6 @@ h5.ai-heading {
 }
 
 .textLayer ::selection {
-  background: rgba(124, 110, 240, 0.3);
+  background: #7c6ef0;
   color: transparent;
 }

@@ -260,19 +260,21 @@ export default function FileViewer({ file, onBack }) {
           onClick={() => setAiPanelOpen((p) => !p)}
           title="Toggle AI assistant"
         >
-          ◈ AI
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
+          </svg>
+          AI
         </button>
       </div>
-
-      {/* ── Mobile AI sheet indicator (when closed) ── */}
-      {isMobile && !aiPanelOpen && renderStatus === "ready" && (
-        <button
-          className="fv-mobile-ai-bar"
-          onClick={() => setAiPanelOpen(true)}
-        >
-          ◈ Open AI Assistant
-        </button>
-      )}
 
       {/* ── Split layout ── */}
       <div className={`fv-split ${!aiPanelOpen ? "ai-hidden" : ""}`}>
@@ -369,17 +371,26 @@ export default function FileViewer({ file, onBack }) {
           </>
         )}
 
-        {/* Floating explain tooltip */}
-        {selectedText && selectionPos && aiPanelOpen && (
+        {/* Floating explain tooltip - Now visible even when AI is closed! */}
+        {selectedText && selectionPos && (
           <div
             className="fv-selection-tooltip"
             style={{ top: selectionPos.top - 44, left: selectionPos.left }}
           >
             <button
               className="fv-tooltip-btn"
-              onClick={() =>
-                document.querySelector(".ai-quick-actions .highlight")?.click()
-              }
+              onClick={() => {
+                // 1. Force the AI panel to open if it is closed
+                if (!aiPanelOpen) setAiPanelOpen(true);
+
+                // 2. Wait a split second for React to mount the AiAssistant DOM,
+                //    then virtually click the explain button
+                setTimeout(() => {
+                  document
+                    .querySelector(".ai-quick-actions .highlight")
+                    ?.click();
+                }, 150);
+              }}
             >
               ◈ Explain this
             </button>

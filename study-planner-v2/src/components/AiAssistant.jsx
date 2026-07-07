@@ -418,20 +418,44 @@ export default function AiAssistant({
           {renderScopeToggle()}
 
           <div className="ai-quick-actions">
-            <button
-              className="ai-action-btn"
+            {/* <button
+              className="ai-action-btn fv-ai-toggle"
               onClick={handleQuickSummarize}
               disabled={loading}
             >
-              ◈ Summarize
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
+              </svg>{" "}
+              Summarize
             </button>
             <button
-              className="ai-action-btn"
+              className="ai-action-btn fv-ai-toggle"
               onClick={handleQuickQuiz}
               disabled={loading}
             >
-              ✦ Quiz Me
-            </button>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
+              </svg>{" "}
+              Quiz Me
+            </button> */}
             {selectedText && (
               <button
                 className="ai-action-btn highlight"
@@ -447,7 +471,20 @@ export default function AiAssistant({
             {messages.length === 0 && !loading ? (
               <div className="ai-empty">
                 <div className="ai-welcome-text">
-                  <span className="ai-sparkle">✨</span>
+                  <span className="ai-sparkle fv-ai-toggle">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
+                    </svg>
+                  </span>
                   <p>
                     I'm ready to help you study{" "}
                     <span className="ai-filename-badge" title={fileName}>
@@ -551,11 +588,23 @@ export default function AiAssistant({
                 </button>
               </div>
               <button
-                className="ai-generate-btn"
+                className="ai-generate-btn fv-ai-toggle"
                 onClick={handleGenerateQuiz}
                 disabled={loading}
               >
-                ✦ Generate Quiz
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
+                </svg>{" "}
+                Generate Quiz
               </button>
             </div>
           )}
@@ -664,8 +713,23 @@ export default function AiAssistant({
           {renderScopeToggle()}
 
           {!summary && !loading && (
-            <button className="ai-generate-btn" onClick={handleSummarize}>
-              ◈ Summarize Document
+            <button
+              className="ai-generate-btn fv-ai-toggle"
+              onClick={handleSummarize}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
+              </svg>{" "}
+              Summarize Document
             </button>
           )}
 
