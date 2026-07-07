@@ -91,7 +91,7 @@ export default function FileLibrary({ onOpenFile }) {
         <div>
           <h2 className="list-title">Study Library</h2>
           <p className="dashboard-sub">
-            Upload PDFs and DOCX files to read and study with AI assistance.
+            Upload notes, ask questions, generate quizzes, and review faster.
           </p>
         </div>
         <button
@@ -99,7 +99,7 @@ export default function FileLibrary({ onOpenFile }) {
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
         >
-          {uploading ? "Uploading…" : "+ Upload File"}
+          {uploading ? "Uploading…" : "+ Upload Note"}
         </button>
         <input
           ref={inputRef}
@@ -109,14 +109,6 @@ export default function FileLibrary({ onOpenFile }) {
           style={{ display: "none" }}
         />
       </div>
-
-      {/* AI key notice */}
-      {/* {!apiKeySet && (
-        <div className="fl-notice">
-          <span className="fl-notice-icon">⚡</span>
-          <span>Add your Gemini API key in <strong>Settings</strong> to unlock AI study features for your documents.</span>
-        </div>
-      )} */}
 
       {error && (
         <div className="fl-error">
@@ -148,8 +140,8 @@ export default function FileLibrary({ onOpenFile }) {
           <div className="fl-empty-icon">📂</div>
           <p>
             {search
-              ? "No files match your search."
-              : "No files yet — click to upload your first document."}
+              ? "No note match your search."
+              : "No note yet — click to upload your first note."}
           </p>
           {!search && (
             <span className="fl-empty-hint">
@@ -202,7 +194,7 @@ export default function FileLibrary({ onOpenFile }) {
                   className="fl-open-btn"
                   onClick={() => onOpenFile(file)}
                 >
-                  Open + Study
+                  Study →
                 </button>
                 <button
                   className="fl-delete-btn"

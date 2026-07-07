@@ -379,7 +379,7 @@ export default function AiAssistant({
       <div className="ai-header">
         <div className="ai-header-left">
           <span className="ai-indicator" />
-          <span className="ai-title">AI Study Buddy</span>
+          <span className="ai-title">AI Tutor</span>
         </div>
         {docStats && (
           <div className="ai-doc-stats">

@@ -3905,30 +3905,40 @@ h5.ai-heading {
   position: fixed;
   bottom: 1.5rem;
   right: 1.5rem;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
+  width: auto; /* Allows the pill to stretch around the text */
+  height: 42px;
+  padding: 0 16px 0 12px; /* Slightly less padding on the icon side for visual balance */
+  border-radius: 100px; /* Creates the perfect pill shape */
   background: var(--surface);
   border: 1px solid var(--border-mid);
   color: var(--text-dim);
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 8px; /* Space between icon and text */
   cursor: pointer;
   z-index: 400;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   transition: all 0.2s var(--ease);
 }
+
+.feedback-fab-text {
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
 .feedback-fab:hover {
   background: var(--surface-2);
   color: var(--text);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  border-color: var(--border);
 }
 .feedback-fab.hidden {
   opacity: 0;
   pointer-events: none;
-  transform: scale(0.8);
+  transform: translateY(10px) scale(0.95);
 }
 
 /* Modal Wrapper (Positions it right above the FAB) */
@@ -4192,4 +4202,263 @@ h5.ai-heading {
 .textLayer ::selection {
   background: #7c6ef0;
   color: transparent;
+}
+
+/* ==========================================================================
+   MOBILE HEADER & SUBJECTS (COMPACT)
+   ========================================================================== */
+/* 1. Tighten the overall header padding */
+.mobile-header {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  /* Reduce top padding, but keep the iOS notch safe area */
+  padding-top: calc(0.25rem + env(safe-area-inset-top));
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+}
+
+/* 2. Squeeze the space around the logo and icons */
+.mobile-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  /* Shave off vertical padding (was likely 0.5rem or more) */
+  padding: 0.25rem 1rem 0.4rem 1rem;
+}
+
+.mobile-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 0.95rem; /* Slightly smaller logo text */
+  color: var(--text);
+}
+
+.mobile-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Tighter gap between actions */
+}
+
+.streak-badge {
+  background: var(--surface-2);
+  padding: 2px 8px; /* Reduced padding */
+  border-radius: 100px;
+  font-family: var(--mono);
+  font-size: 0.7rem; /* Smaller font */
+  color: var(--text-mid);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* The magical fade effect on the right edge */
+.mobile-subjects-wrapper::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 32px;
+  background: linear-gradient(to right, transparent, var(--surface));
+  pointer-events: none; /* Allows clicking through the fade */
+}
+
+.subject-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface-2);
+  border: 1px solid transparent;
+  color: var(--text-mid);
+  font-size: 0.75rem; /* Shrunk from 0.8rem */
+  font-weight: 500;
+  padding: 4px 10px; /* Slimmer pill padding */
+  border-radius: 100px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+
+.subject-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.subject-pill.active {
+  background: var(--accent-bg);
+  color: var(--accent);
+  border-color: rgba(124, 110, 240, 0.2);
+}
+
+.subject-pill.manage-btn {
+  background: transparent;
+  border: 1px dashed var(--border-mid);
+  color: var(--text-dim);
+  padding-right: 1.5rem; /* Ensure text isn't hidden under the fade */
+}
+/* ==========================================================================
+   MOBILE HEADER: CUSTOM DROPDOWN
+   ========================================================================== */
+
+.mobile-subject-dropdown {
+  position: relative;
+  /* Cut the bottom padding in half */
+  padding: 0 1rem 0.4rem 1rem;
+}
+
+/* The Button You Click */
+.dropdown-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border-mid);
+  /* Slimmer vertical padding (from 10px down to 7px) */
+  padding: 7px 12px;
+  border-radius: var(--r);
+  font-family: var(--sans);
+  font-size: 0.85rem; /* Slightly smaller text */
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+  min-height: 38px; /* Ensures it remains a comfortable touch target */
+}
+
+.dropdown-trigger.open {
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 0 0 2px var(--accent-bg);
+}
+
+.dropdown-trigger-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dropdown-chevron {
+  color: var(--text-dim);
+  transition: transform 0.2s var(--ease);
+}
+
+.dropdown-trigger.open .dropdown-chevron {
+  transform: rotate(180deg);
+  color: var(--accent);
+}
+
+/* The Floating Menu */
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% - 0.5rem);
+  left: 1rem;
+  right: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  z-index: 200;
+  animation: dropDownSlide 0.2s var(--ease) forwards;
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes dropDownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Items Inside the Menu */
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  font-size: 0.88rem;
+  color: var(--text-mid);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.dropdown-item.active {
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+.dropdown-item.manage-btn {
+  color: var(--text-dim);
+}
+
+.dropdown-item.manage-btn:hover {
+  color: var(--text);
+}
+
+/* ==========================================================================
+   PREMIUM GHOST ICON BUTTONS
+   ========================================================================== */
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Perfect 36x36 touch target */
+  width: 36px;
+  height: 36px;
+  padding: 0;
+
+  /* Strip the ugly default browser styling */
+  background: transparent;
+  border: none;
+
+  /* Soft rounded corners */
+  border-radius: var(--r, 8px);
+
+  /* Default color (make sure it contrasts with your dark header) */
+  color: var(--text-dim, #a1a1aa);
+  cursor: pointer;
+  transition: all 0.2s var(--ease, ease);
+}
+
+/* The Hover State: Soft highlight and brighter icon */
+.icon-btn:hover {
+  background: var(--surface-2, rgba(255, 255, 255, 0.1));
+  color: var(--text, #ffffff);
+  transform: translateY(-1px);
+}
+
+.icon-btn:active {
+  transform: translateY(0);
 }

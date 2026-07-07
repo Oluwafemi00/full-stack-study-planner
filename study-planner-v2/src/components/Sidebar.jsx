@@ -3,9 +3,9 @@ import { useApp } from "../context/AppContext";
 
 const NAV = [
   { id: "today", icon: "◈", label: "Today" },
-  { id: "all", icon: "⊞", label: "All Tasks" },
+  { id: "all", icon: "⊞", label: "Tasks" },
   { id: "study-assistant", icon: "◈", label: "Study Assistant", soon: false },
-  { id: "dashboard", icon: "◉", label: "Dashboard" },
+  { id: "dashboard", icon: "◉", label: "Progress" },
 ];
 
 export default function Sidebar({ mobileOpen, onClose }) {
@@ -37,10 +37,21 @@ export default function Sidebar({ mobileOpen, onClose }) {
   const sidebarContent = (
     <aside className="sidebar">
       <div className="sidebar-logo">
-        <span className="logo-mark">SP</span>
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="var(--accent)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+        </svg>
         <div>
           <div className="logo-title">Study Planner</div>
-          <div className="logo-version">v2.0</div>
+          {/* <div className="logo-version">v2.0</div> */}
         </div>
         {/* Close button — only visible on mobile */}
         <button
