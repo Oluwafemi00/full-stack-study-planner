@@ -15,8 +15,8 @@ export default defineConfig({
       },
       includeAssets: ["favicon.ico", "apple-touch-icon.png"],
       manifest: {
-        name: "Study Planner Pro",
-        short_name: "StudyPlan",
+        name: "Study Planner",
+        short_name: "StudyPlanr",
         description: "A serious productivity tool for students",
         theme_color: "#7c6ef0",
         background_color: "#ffffff",

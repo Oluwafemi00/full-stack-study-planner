@@ -8,7 +8,7 @@ import {
 } from "../utils/fileStorage";
 
 const ACCEPTED = ".pdf,.docx,.doc";
-const MAX_SIZE = 20 * 1024 * 1024; // 20 MB
+const MAX_SIZE = 50 * 1024 * 1024; // 50 MB
 
 export default function FileLibrary({ onOpenFile }) {
   const [files, setFiles] = useState([]);
@@ -39,7 +39,7 @@ export default function FileLibrary({ onOpenFile }) {
     inputRef.current.value = "";
 
     if (file.size > MAX_SIZE) {
-      setError("File too large. Maximum size is 20 MB.");
+      setError("File too large. Maximum size is 50 MB.");
       return;
     }
 
@@ -145,7 +145,7 @@ export default function FileLibrary({ onOpenFile }) {
           </p>
           {!search && (
             <span className="fl-empty-hint">
-              Supports PDF and DOCX · Max 20 MB
+              Supports PDF and DOCX · Max 50 MB
             </span>
           )}
         </div>
