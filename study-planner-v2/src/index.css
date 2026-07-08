@@ -3887,7 +3887,7 @@ h5.ai-heading {
 
   /* Ensure the main scrollable area clears both the top and bottom bars */
   .main-content {
-    padding-bottom: calc(85px + env(safe-area-inset-bottom));
+    padding-bottom: calc(300px + env(safe-area-inset-bottom));
   }
 
   /* Hide the hamburger icon in the top nav since we have bottom nav */
