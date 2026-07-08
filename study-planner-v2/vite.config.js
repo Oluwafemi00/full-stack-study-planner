@@ -18,8 +18,8 @@ export default defineConfig({
         name: "Study Planner Pro",
         short_name: "StudyPlan",
         description: "A serious productivity tool for students",
-        theme_color: "#0a0a0a",
-        background_color: "#0a0a0a",
+        theme_color: "#7c6ef0",
+        background_color: "#ffffff",
         display: "standalone",
         start_url: "/",
         icons: [
