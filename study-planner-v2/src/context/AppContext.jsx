@@ -30,7 +30,9 @@ function getInitialState() {
     sessionHistory: saved?.sessionHistory ?? [],
     streak: saved?.streak ?? { count: 0, lastDate: null },
     settings: saved?.settings ?? DEFAULT_SETTINGS,
-    view: saved?.view ?? "today", // ← now persisted
+    view: saved?.view ?? "today",
+    activeFileId: saved?.activeFileId ?? null, // Added
+    files: saved?.files ?? [], // Added: Lightweight metadata array
     filterStatus: "all",
     quickCaptureOpen: false,
   };
@@ -155,6 +157,25 @@ function reducer(state, action) {
     case "SET_QUICK_CAPTURE":
       return { ...state, quickCaptureOpen: action.payload };
 
+    // --- NEW FILE CASES ---
+    case "ADD_FILE_META":
+      return { ...state, files: [action.payload, ...state.files] };
+
+    case "DELETE_FILE":
+      return {
+        ...state,
+        files: state.files.filter((f) => f.id !== action.payload),
+        // If they delete the file they are currently viewing, kick them back
+        activeFileId:
+          state.activeFileId === action.payload ? null : state.activeFileId,
+      };
+
+    case "OPEN_FILE":
+      return { ...state, activeFileId: action.payload };
+
+    case "CLOSE_FILE":
+      return { ...state, activeFileId: null };
+
     default:
       return state;
   }
@@ -172,7 +193,6 @@ export function AppProvider({ children }) {
       localStorage.setItem("spp_v2", JSON.stringify(persisted));
     }, 500);
 
-    // Cleanup: If state changes again within 500ms, cancel the previous save
     return () => clearTimeout(timeoutId);
   }, [state]);
 

@@ -1,20 +1,15 @@
-import { useState } from 'react'
-import FileLibrary from './FileLibrary'
-import FileViewer  from './FileViewer'
+import { useApp } from "../context/AppContext";
+import FileLibrary from "./FileLibrary";
+import FileViewer from "./FileViewer";
 
 export default function StudyAssistant() {
-  const [openFile, setOpenFile] = useState(null)
+  const { state } = useApp();
 
-  if (openFile) {
-    return (
-      <FileViewer
-        file={openFile}
-        onBack={() => setOpenFile(null)}
-      />
-    )
+  // If there is an active file ID in global state, show the viewer
+  if (state.activeFileId) {
+    return <FileViewer />;
   }
 
-  return (
-    <FileLibrary onOpenFile={setOpenFile} />
-  )
+  // Otherwise, show the library
+  return <FileLibrary />;
 }

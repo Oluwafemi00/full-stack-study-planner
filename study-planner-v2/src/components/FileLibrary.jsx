@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
+import { useApp } from "../context/AppContext";
 import {
-  getAllFiles,
   saveFile,
   deleteFile,
   readFileAsArrayBuffer,
@@ -10,28 +10,14 @@ import {
 const ACCEPTED = ".pdf,.docx,.doc";
 const MAX_SIZE = 50 * 1024 * 1024; // 50 MB
 
-export default function FileLibrary({ onOpenFile }) {
-  const [files, setFiles] = useState([]);
-  const [loading, setLoading] = useState(true);
+export default function FileLibrary() {
+  const { state, dispatch } = useApp();
+  const { files } = state; // Lightweight array from Context
+
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const inputRef = useRef();
-
-  useEffect(() => {
-    loadFiles();
-  }, []);
-
-  async function loadFiles() {
-    try {
-      const all = await getAllFiles();
-      setFiles(all.sort((a, b) => b.uploadedAt - a.uploadedAt));
-    } catch {
-      setError("Could not load file library.");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function handleUpload(e) {
     const file = e.target.files?.[0];
@@ -54,16 +40,29 @@ export default function FileLibrary({ onOpenFile }) {
 
     try {
       const buffer = await readFileAsArrayBuffer(file);
+      const fileId = Date.now();
+
+      // Heavy Record for IndexedDB
       const record = {
-        id: Date.now(),
+        id: fileId,
         name: file.name,
         type: ext,
         size: file.size,
         uploadedAt: Date.now(),
         data: buffer,
       };
+
+      // Light Record for LocalStorage/Context
+      const lightMeta = {
+        id: fileId,
+        name: file.name,
+        type: ext,
+        size: file.size,
+        uploadedAt: Date.now(),
+      };
+
       await saveFile(record);
-      setFiles((prev) => [record, ...prev]);
+      dispatch({ type: "ADD_FILE_META", payload: lightMeta });
     } catch {
       setError("Upload failed. Please try again.");
     } finally {
@@ -74,7 +73,7 @@ export default function FileLibrary({ onOpenFile }) {
   async function handleDelete(id, name) {
     if (!window.confirm(`Delete "${name}"?`)) return;
     await deleteFile(id);
-    setFiles((prev) => prev.filter((f) => f.id !== id));
+    dispatch({ type: "DELETE_FILE", payload: id });
   }
 
   const filtered = files.filter((f) =>
@@ -86,7 +85,6 @@ export default function FileLibrary({ onOpenFile }) {
 
   return (
     <div className="file-library">
-      {/* Header */}
       <div className="fl-header">
         <div>
           <h2 className="list-title">Study Library</h2>
@@ -117,7 +115,6 @@ export default function FileLibrary({ onOpenFile }) {
         </div>
       )}
 
-      {/* Search */}
       {files.length > 3 && (
         <div className="fl-search-wrap">
           <input
@@ -129,13 +126,7 @@ export default function FileLibrary({ onOpenFile }) {
         </div>
       )}
 
-      {/* File grid */}
-      {loading ? (
-        <div className="fl-loading">
-          <div className="fl-spinner" />
-          <span>Loading library…</span>
-        </div>
-      ) : filtered.length === 0 ? (
+      {filtered.length === 0 ? (
         <div className="fl-empty" onClick={() => inputRef.current?.click()}>
           <div className="fl-empty-icon">📂</div>
           <p>
@@ -153,7 +144,13 @@ export default function FileLibrary({ onOpenFile }) {
         <div className="fl-grid">
           {filtered.map((file) => (
             <div key={file.id} className="fl-card">
-              <div className="fl-card-top" onClick={() => onOpenFile(file)}>
+              <div
+                className="fl-card-top"
+                onClick={() =>
+                  dispatch({ type: "OPEN_FILE", payload: file.id })
+                }
+                style={{ cursor: "pointer" }}
+              >
                 <span
                   className="fl-type-icon"
                   style={{ color: typeColor(file.type) }}
@@ -172,7 +169,13 @@ export default function FileLibrary({ onOpenFile }) {
                 </span>
               </div>
 
-              <div className="fl-card-body" onClick={() => onOpenFile(file)}>
+              <div
+                className="fl-card-body"
+                onClick={() =>
+                  dispatch({ type: "OPEN_FILE", payload: file.id })
+                }
+                style={{ cursor: "pointer" }}
+              >
                 <p className="fl-filename" title={file.name}>
                   {file.name}
                 </p>
@@ -192,7 +195,9 @@ export default function FileLibrary({ onOpenFile }) {
               <div className="fl-card-footer">
                 <button
                   className="fl-open-btn"
-                  onClick={() => onOpenFile(file)}
+                  onClick={() =>
+                    dispatch({ type: "OPEN_FILE", payload: file.id })
+                  }
                 >
                   Study →
                 </button>

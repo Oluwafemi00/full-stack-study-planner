@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useApp } from "../context/AppContext";
+import { getFile } from "../utils/fileStorage";
 import AiAssistant from "./AiAssistant";
 
 const PDFJS_URL =
@@ -41,13 +43,15 @@ function waitForGlobal(name, timeout = 8000) {
   });
 }
 
-export default function FileViewer({ file, onBack }) {
+export default function FileViewer() {
+  const { state, dispatch } = useApp();
+  const [activeFile, setActiveFile] = useState(null); // Holds heavy DB record
+
   const [docText, setDocText] = useState("");
   const [renderStatus, setRenderStatus] = useState("loading");
   const [errorMsg, setErrorMsg] = useState("");
   const [selectedText, setSelectedText] = useState("");
   const [selectionPos, setSelectionPos] = useState(null);
-  // AI panel: closed by default on mobile, open on desktop
   const [aiPanelOpen, setAiPanelOpen] = useState(() => window.innerWidth > 768);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
@@ -56,13 +60,34 @@ export default function FileViewer({ file, onBack }) {
   const viewerRef = useRef();
   const pdfDocRef = useRef();
 
+  // 1. Fetch Heavy File from IndexedDB on Mount
   useEffect(() => {
-    if (!file) return;
-    if (file.type === "pdf") renderPDF();
-    else renderDOCX();
-  }, [file]);
+    async function loadHeavyFile() {
+      if (!state.activeFileId) return;
+      try {
+        const fullFileRecord = await getFile(state.activeFileId);
+        if (!fullFileRecord) {
+          dispatch({ type: "CLOSE_FILE" });
+          return;
+        }
+        setActiveFile(fullFileRecord);
+      } catch (err) {
+        console.error(err);
+        setErrorMsg("Failed to load file from database.");
+        setRenderStatus("error");
+      }
+    }
+    loadHeavyFile();
+  }, [state.activeFileId, dispatch]);
 
-  // Text selection
+  // 2. Render based on the heavy file object
+  useEffect(() => {
+    if (!activeFile) return;
+    if (activeFile.type === "pdf") renderPDF();
+    else renderDOCX();
+  }, [activeFile]);
+
+  // Text selection handler
   useEffect(() => {
     const handler = () => {
       const sel = window.getSelection();
@@ -91,20 +116,18 @@ export default function FileViewer({ file, onBack }) {
     };
   }, []);
 
-  // ── PDF rendering ───────────────────────────────────────────────────
   async function renderPDF() {
     try {
       await loadScript(PDFJS_URL);
       const pdfjs = await waitForGlobal("pdfjsLib");
       pdfjs.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
 
-      const bufferCopy = file.data.slice(0);
+      const bufferCopy = activeFile.data.slice(0);
       const pdf = await pdfjs.getDocument({ data: new Uint8Array(bufferCopy) })
         .promise;
       pdfDocRef.current = pdf;
       setTotalPages(pdf.numPages);
 
-      // Extract only the first 5 pages upfront for general document context (fast loading)
       let initialText = "";
       const initialPageTexts = new Array(pdf.numPages).fill("");
 
@@ -135,7 +158,6 @@ export default function FileViewer({ file, onBack }) {
     if (!container) return;
 
     container.innerHTML = "";
-
     const pdfjs = await waitForGlobal("pdfjsLib");
     const page = await pdf.getPage(pageNum);
 
@@ -146,34 +168,27 @@ export default function FileViewer({ file, onBack }) {
     const renderScale = cssScale * dpr;
     const viewport = page.getViewport({ scale: renderScale });
 
-    // 1. Create a positioning wrapper for this page
     const pageWrapper = document.createElement("div");
     pageWrapper.className = "pdf-page-container";
     pageWrapper.style.width = `${Math.floor(viewport.width / dpr)}px`;
     pageWrapper.style.height = `${Math.floor(viewport.height / dpr)}px`;
 
-    // 2. Setup the Canvas (The Visuals)
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
     canvas.width = viewport.width;
     canvas.height = viewport.height;
     pageWrapper.appendChild(canvas);
 
-    // 3. Setup the Text Layer (The Selectable HTML)
     const textLayerDiv = document.createElement("div");
     textLayerDiv.className = "textLayer";
-    // PDF.js uses CSS variables to scale the text to match the canvas
     textLayerDiv.style.setProperty("--scale-factor", renderScale / dpr);
     pageWrapper.appendChild(textLayerDiv);
 
-    // Mount everything to the DOM
     container.appendChild(pageWrapper);
 
-    // 4. Render the Canvas Visuals
     const renderContext = { canvasContext: context, viewport: viewport };
     await page.render(renderContext).promise;
 
-    // 5. Render the Invisible Text Layer over it
     const textContent = await page.getTextContent();
     await pdfjs.renderTextLayer({
       textContentSource: textContent,
@@ -184,15 +199,11 @@ export default function FileViewer({ file, onBack }) {
 
     setCurrentPage(pageNum);
 
-    // LAZY LOAD TEXT: Extract text for AI only when the user visits this page
     setPageTexts((prev) => {
       if (prev[pageNum - 1]) return prev;
-
-      // Since we already awaited textContent for the text layer, we can just use it immediately!
       const text = textContent.items.map((s) => s.str).join(" ");
       const newTexts = [...prev];
       newTexts[pageNum - 1] = text;
-
       return newTexts;
     });
   }
@@ -205,12 +216,13 @@ export default function FileViewer({ file, onBack }) {
     );
   }
 
-  // ── DOCX rendering ─────────────────────────────────────────────────
   async function renderDOCX() {
     try {
       await loadScript(MAMMOTH_URL);
       const mammoth = await waitForGlobal("mammoth");
-      const result = await mammoth.convertToHtml({ arrayBuffer: file.data });
+      const result = await mammoth.convertToHtml({
+        arrayBuffer: activeFile.data,
+      });
       const html = result.value;
 
       const tmp = document.createElement("div");
@@ -236,19 +248,32 @@ export default function FileViewer({ file, onBack }) {
 
   const isMobile = window.innerWidth <= 768;
 
+  if (!activeFile && renderStatus !== "error") {
+    return (
+      <div className="file-viewer">
+        <div className="fv-loading">
+          <div className="fl-spinner lg" />
+          <p>Retrieving document from storage...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="file-viewer">
-      {/* ── Top bar ── */}
       <div className="fv-topbar">
-        <button className="fv-back-btn" onClick={onBack}>
+        <button
+          className="fv-back-btn"
+          onClick={() => dispatch({ type: "CLOSE_FILE" })}
+        >
           ← Back
         </button>
 
         <div className="fv-file-info">
-          <span className="fv-filename" title={file.name}>
-            {file.name}
+          <span className="fv-filename" title={activeFile?.name || ""}>
+            {activeFile?.name || "Document"}
           </span>
-          {file.type === "pdf" && totalPages > 0 && (
+          {activeFile?.type === "pdf" && totalPages > 0 && (
             <span className="fv-page-info">
               {currentPage}/{totalPages}
             </span>
@@ -276,9 +301,7 @@ export default function FileViewer({ file, onBack }) {
         </button>
       </div>
 
-      {/* ── Split layout ── */}
       <div className={`fv-split ${!aiPanelOpen ? "ai-hidden" : ""}`}>
-        {/* Document side */}
         <div className="fv-doc-side">
           {renderStatus === "loading" && (
             <div className="fv-loading">
@@ -291,7 +314,10 @@ export default function FileViewer({ file, onBack }) {
             <div className="fv-error">
               <span className="fv-error-icon">⚠</span>
               <p>{errorMsg}</p>
-              <button className="btn-ghost" onClick={onBack}>
+              <button
+                className="btn-ghost"
+                onClick={() => dispatch({ type: "CLOSE_FILE" })}
+              >
                 Back to library
               </button>
             </div>
@@ -299,12 +325,11 @@ export default function FileViewer({ file, onBack }) {
 
           <div
             ref={viewerRef}
-            className={`fv-doc-content ${file.type === "pdf" ? "pdf-mode" : "docx-mode"}`}
+            className={`fv-doc-content ${activeFile?.type === "pdf" ? "pdf-mode" : "docx-mode"}`}
             style={{ display: renderStatus === "ready" ? "block" : "none" }}
           />
 
-          {/* PDF page nav */}
-          {file.type === "pdf" &&
+          {activeFile?.type === "pdf" &&
             renderStatus === "ready" &&
             totalPages > 1 && (
               <div className="fv-page-nav">
@@ -337,10 +362,8 @@ export default function FileViewer({ file, onBack }) {
             )}
         </div>
 
-        {/* AI side */}
-        {aiPanelOpen && (
+        {aiPanelOpen && activeFile && (
           <>
-            {/* Mobile Backdrop for clicking outside to close */}
             {isMobile && (
               <div
                 className="fv-ai-backdrop"
@@ -352,7 +375,7 @@ export default function FileViewer({ file, onBack }) {
             <div className="fv-ai-side">
               <AiAssistant
                 documentText={docText}
-                fileName={file.name}
+                fileName={activeFile.name}
                 selectedText={selectedText}
                 onClearSelection={clearSelection}
                 currentPage={currentPage}
@@ -362,7 +385,6 @@ export default function FileViewer({ file, onBack }) {
           </>
         )}
 
-        {/* Floating explain tooltip - Now visible even when AI is closed! */}
         {selectedText && selectionPos && (
           <div
             className="fv-selection-tooltip"
@@ -371,11 +393,7 @@ export default function FileViewer({ file, onBack }) {
             <button
               className="fv-tooltip-btn"
               onClick={() => {
-                // 1. Force the AI panel to open if it is closed
                 if (!aiPanelOpen) setAiPanelOpen(true);
-
-                // 2. Wait a split second for React to mount the AiAssistant DOM,
-                //    then virtually click the explain button
                 setTimeout(() => {
                   document
                     .querySelector(".ai-quick-actions .highlight")
