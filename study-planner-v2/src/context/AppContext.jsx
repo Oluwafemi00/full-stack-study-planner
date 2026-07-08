@@ -165,10 +165,15 @@ const AppContext = createContext(null);
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, undefined, getInitialState);
 
-  // Persist to localStorage — now includes view
+  // Persist to localStorage with a high-performance 500ms debounce
   useEffect(() => {
-    const { filterStatus, quickCaptureOpen, ...persisted } = state;
-    localStorage.setItem("spp_v2", JSON.stringify(persisted));
+    const timeoutId = setTimeout(() => {
+      const { filterStatus, quickCaptureOpen, ...persisted } = state;
+      localStorage.setItem("spp_v2", JSON.stringify(persisted));
+    }, 500);
+
+    // Cleanup: If state changes again within 500ms, cancel the previous save
+    return () => clearTimeout(timeoutId);
   }, [state]);
 
   useEffect(() => {

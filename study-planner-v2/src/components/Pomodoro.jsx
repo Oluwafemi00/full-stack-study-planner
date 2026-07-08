@@ -66,11 +66,33 @@ export default function Pomodoro() {
 
   // Timer never restores as running — user must press play after reload
   const [running, setRunning] = useState(false);
-
-  // Save pomo state whenever it changes
+  // 1. Silently track the latest seconds without triggering re-renders or effects
+  const secondsRef = useRef(secondsLeft);
   useEffect(() => {
-    savePomo({ mode, secondsLeft, sessionsThisRound });
-  }, [mode, secondsLeft, sessionsThisRound]);
+    secondsRef.current = secondsLeft;
+  }, [secondsLeft]);
+
+  // High-Performance Save: Only write to disk when necessary
+  useEffect(() => {
+    const saveCurrentState = () => {
+      savePomo({
+        mode,
+        secondsLeft: secondsRef.current,
+        sessionsThisRound,
+      });
+    };
+
+    // Save instantly if the user tries to close the tab or refresh
+    window.addEventListener("beforeunload", saveCurrentState);
+
+    // Save when the timer is paused, mode changes, or session completes
+    saveCurrentState();
+
+    return () => {
+      window.removeEventListener("beforeunload", saveCurrentState);
+      saveCurrentState(); // Save on component unmount
+    };
+  }, [mode, sessionsThisRound, running]);
 
   // Sync seconds when settings change (only if not running)
   useEffect(() => {

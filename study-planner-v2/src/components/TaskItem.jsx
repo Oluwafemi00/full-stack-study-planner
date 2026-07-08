@@ -34,46 +34,53 @@ export default function TaskItem({ task, dragHandlers }) {
   const subtasksDone = task.subtasks.filter((s) => s.completed).length;
   const subtasksTotal = task.subtasks.length;
 
-  const PRIORITY_COLORS = {
-    high: "var(--red)",
-    medium: "var(--amber)",
-    low: "var(--green)",
-  };
+  // We use inline CSS variables to pass the dynamic color down gracefully
+  const dynamicColor = subject?.color || "var(--accent)";
 
   return (
     <div
-      className={`task-item ${task.completed ? "completed" : ""} ${overdue ? "overdue" : ""}`}
+      className={`task-item-wrap ${task.completed ? "completed" : ""}`}
       {...dragHandlers}
     >
-      {/* Priority stripe */}
-      <div
-        className="task-priority-stripe"
-        style={{ background: PRIORITY_COLORS[task.priority] }}
-      />
+      {/* ── Main Task Row ── */}
+      <div className="task-row">
+        {/* Subtle Drag Handle */}
+        <div className="drag-handle-wrap" title="Drag to reorder">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="9" cy="5" r="1"></circle>
+            <circle cx="9" cy="12" r="1"></circle>
+            <circle cx="9" cy="19" r="1"></circle>
+            <circle cx="15" cy="5" r="1"></circle>
+            <circle cx="15" cy="12" r="1"></circle>
+            <circle cx="15" cy="19" r="1"></circle>
+          </svg>
+        </div>
 
-      <div className="task-main">
-        {/* Drag handle */}
-        <span className="drag-handle" title="Drag to reorder">
-          ⠿
-        </span>
+        {/* Custom CSS Checkbox */}
+        <div className="task-checkbox-wrap">
+          <input
+            type="checkbox"
+            className="custom-checkbox"
+            checked={task.completed}
+            onChange={toggle}
+            style={
+              task.completed
+                ? { backgroundColor: dynamicColor, borderColor: dynamicColor }
+                : {}
+            }
+          />
+        </div>
 
-        {/* Checkbox */}
-        <button
-          className={`task-check ${task.completed ? "checked" : ""}`}
-          onClick={toggle}
-          style={
-            task.completed
-              ? {
-                  borderColor: subject?.color ?? "var(--accent)",
-                  background: subject?.color ?? "var(--accent)",
-                }
-              : {}
-          }
-        >
-          {task.completed && "✓"}
-        </button>
-
-        {/* Content */}
+        {/* Task Content & Metadata */}
         <div
           className="task-content"
           onClick={() => !editing && setExpanded((e) => !e)}
@@ -92,22 +99,30 @@ export default function TaskItem({ task, dragHandlers }) {
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
-            <span className="task-text">{task.text}</span>
+            <div className="task-title">{task.text}</div>
           )}
 
           <div className="task-meta">
+            {/* Minimal Priority Dot */}
+            <span
+              className={`priority-dot priority-${task.priority}`}
+              title={`${task.priority} priority`}
+            />
+
+            {/* Premium Subject Pill */}
             {subject && (
               <span
-                className="task-subject-tag"
+                className="meta-subject"
                 style={{
-                  background: subject.color + "22",
-                  color: subject.color,
-                  borderColor: subject.color + "44",
+                  color: dynamicColor,
+                  backgroundColor: `${dynamicColor}15`, // Adds 15% opacity to the hex color
                 }}
               >
                 {subject.name}
               </span>
             )}
+
+            {/* Clean Date Indicator */}
             <span
               className={`task-date ${overdue ? "overdue-text" : today ? "today-text" : ""}`}
             >
@@ -115,18 +130,48 @@ export default function TaskItem({ task, dragHandlers }) {
               {formatDate(task.date)}
               {task.dueTime && ` · ${task.dueTime}`}
             </span>
+
+            {/* Pomodoro & Subtasks */}
+            {/* Pomodoro & Subtasks */}
             {task.estSessions > 0 && (
-              <span className="task-est">⏲️ ×{task.estSessions}</span>
+              <span className="task-est">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 22h14" />
+                  <path d="M5 2h14" />
+                  <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22" />
+                  <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
+                </svg>
+                {task.estSessions}
+              </span>
             )}
             {subtasksTotal > 0 && (
               <span className="task-subtask-count">
-                {subtasksDone}/{subtasksTotal} steps
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                {subtasksDone}/{subtasksTotal}
               </span>
             )}
           </div>
         </div>
 
-        {/* Actions */}
+        {/* Action Buttons */}
         <div className="task-actions">
           <button
             className="task-action-btn"
@@ -145,10 +190,10 @@ export default function TaskItem({ task, dragHandlers }) {
         </div>
       </div>
 
-      {/* Expanded panel */}
+      {/* ── Expanded Panel ── */}
       {expanded && (
         <div className="task-expanded">
-          {/* Subtask progress bar */}
+          {/* Progress Bar */}
           {subtasksTotal > 0 && (
             <div className="subtask-progress-wrap">
               <div className="subtask-progress-bar">
@@ -156,7 +201,7 @@ export default function TaskItem({ task, dragHandlers }) {
                   className="subtask-progress-fill"
                   style={{
                     width: `${(subtasksDone / subtasksTotal) * 100}%`,
-                    background: subject?.color ?? "var(--accent)",
+                    background: dynamicColor,
                   }}
                 />
               </div>
@@ -164,28 +209,30 @@ export default function TaskItem({ task, dragHandlers }) {
           )}
 
           {/* Subtasks */}
-          {task.subtasks.map((st) => (
-            <div
-              key={st.id}
-              className={`subtask-row ${st.completed ? "subtask-done" : ""}`}
-            >
-              <button
-                className={`subtask-check ${st.completed ? "checked" : ""}`}
-                onClick={() => toggleSubtask(st.id)}
-                style={
-                  st.completed
-                    ? {
-                        borderColor: subject?.color ?? "var(--accent)",
-                        background: subject?.color ?? "var(--accent)",
-                      }
-                    : {}
-                }
+          <div className="subtask-list">
+            {task.subtasks.map((st) => (
+              <div
+                key={st.id}
+                className={`subtask-row ${st.completed ? "subtask-done" : ""}`}
               >
-                {st.completed && "✓"}
-              </button>
-              <span>{st.text}</span>
-            </div>
-          ))}
+                <input
+                  type="checkbox"
+                  className="custom-checkbox subtask-checkbox"
+                  checked={st.completed}
+                  onChange={() => toggleSubtask(st.id)}
+                  style={
+                    st.completed
+                      ? {
+                          backgroundColor: dynamicColor,
+                          borderColor: dynamicColor,
+                        }
+                      : {}
+                  }
+                />
+                <span className="subtask-title">{st.text}</span>
+              </div>
+            ))}
+          </div>
 
           {/* Notes */}
           {task.notes && (

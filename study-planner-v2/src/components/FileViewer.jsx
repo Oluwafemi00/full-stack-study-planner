@@ -350,15 +350,6 @@ export default function FileViewer({ file, onBack }) {
             )}
 
             <div className="fv-ai-side">
-              {/* Mobile: show close button at top of AI panel
-              {isMobile && (
-                <button
-                  className="fv-mobile-ai-close"
-                  onClick={() => setAiPanelOpen(false)}
-                >
-                  ✕ Close AI panel
-                </button>
-              )} */}
               <AiAssistant
                 documentText={docText}
                 fileName={file.name}

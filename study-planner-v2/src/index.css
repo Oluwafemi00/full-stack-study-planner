@@ -2408,7 +2408,7 @@ a {
   right: 0;
   bottom: 0;
   width: 85%;
-  max-width: 360px;
+  max-width: 550px;
   background: var(--surface);
   border-left: 1px solid var(--border);
   border-top: none;
@@ -4614,4 +4614,213 @@ h5.ai-heading {
 
 .icon-btn:active {
   transform: translateY(0);
+}
+
+/* ==========================================================================
+   PREMIUM TASK ROWS
+   ========================================================================== */
+
+.task-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--border-mid, #eaeaea);
+  background: transparent;
+  transition: background 0.15s var(--ease);
+  cursor: pointer;
+}
+
+.task-row:last-child {
+  border-bottom: none;
+}
+
+.task-row:hover {
+  background: var(--surface-2, rgba(0, 0, 0, 0.02));
+}
+
+/* ── Custom Checkbox ── */
+.task-checkbox-wrap {
+  flex-shrink: 0;
+  padding-top: 2px; /* Aligns checkbox with the first line of text */
+}
+
+.custom-checkbox {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--text-dim, #a1a1aa);
+  border-radius: 4px; /* Slight rounding, not a full circle */
+  background: transparent;
+  cursor: pointer;
+  display: grid;
+  place-content: center;
+  transition: all 0.2s var(--ease);
+}
+
+.custom-checkbox::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  transform: scale(0);
+  /* Uses a custom checkmark SVG as a mask so we can color it dynamically */
+  background-color: white;
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+  transition: 0.2s transform var(--ease);
+}
+
+.custom-checkbox:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.custom-checkbox:checked::before {
+  transform: scale(1);
+}
+
+/* ── Task Content & Metadata ── */
+.task-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-grow: 1;
+}
+
+.task-title {
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.3;
+  transition: color 0.2s;
+}
+
+.task-row.completed .task-title {
+  color: var(--text-dim);
+  text-decoration: line-through;
+}
+
+/* Sleeker Metadata Row */
+.task-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono); /* Monospace looks great for data */
+  font-size: 0.75rem;
+  color: var(--text-mid);
+}
+
+/* Pill for the Subject */
+.meta-subject {
+  background: var(--surface-2);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: var(--sans);
+  font-weight: 500;
+  /* You can inject dynamic subject colors via inline styles in React */
+}
+
+/* Subtly colored priority indicators instead of huge borders */
+.priority-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.priority-high {
+  background: #ef4444;
+}
+.priority-medium {
+  background: #f97316;
+}
+.priority-low {
+  background: #3b82f6;
+}
+/* Wrapper to handle the bottom border instead of the flex row directly */
+.task-item-wrap {
+  border-bottom: 1px solid var(--border-mid, #eaeaea);
+  transition: background 0.2s var(--ease);
+}
+
+.task-item-wrap:last-child {
+  border-bottom: none;
+}
+
+.task-item-wrap:hover {
+  background: var(--surface-2, rgba(0, 0, 0, 0.02));
+}
+
+.task-item-wrap.completed {
+  opacity: 0.6; /* Gently fades out completed rows */
+}
+
+/* Make sure the drag handle aligns nicely */
+.drag-handle-wrap {
+  color: var(--border-mid); /* Super subtle by default */
+  cursor: grab;
+  padding-top: 4px;
+  transition: color 0.2s;
+}
+
+.task-item-wrap:hover .drag-handle-wrap {
+  color: var(--text-mid); /* Darkens when hovering the row */
+}
+
+/* Expanded Panel Styling */
+.task-expanded {
+  padding: 0 12px 16px 44px; /* Left padding aligns content under the task title, skipping the checkbox */
+  animation: slideDown 0.2s var(--ease);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Subtask specific tweaks */
+.subtask-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.subtask-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.subtask-checkbox {
+  width: 16px; /* Slightly smaller than main checkbox */
+  height: 16px;
+  border-radius: 3px;
+}
+
+.subtask-title {
+  font-size: 0.88rem;
+  color: var(--text-mid);
+}
+
+.subtask-done .subtask-title {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.task-subtask-count {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.task-est {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }

@@ -1,16 +1,18 @@
-import { useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { useApp } from "./context/AppContext";
+
 import Sidebar from "./components/Sidebar";
 import TaskList from "./components/TaskList";
 import Pomodoro from "./components/Pomodoro";
-import Dashboard from "./components/Dashboard";
 import QuickCapture from "./components/QuickCapture";
-import SubjectManager from "./components/SubjectManager";
-import StudyAssistant from "./components/StudyAssistant";
 import BottomNav from "./components/BottomNav";
 import UpdateToast from "./components/UpdateToast";
 import FeedbackWidget from "./components/FeedbackWidget";
-import MobileHeader from "./components/MobileHeader"; // New Import
+import MobileHeader from "./components/MobileHeader";
+// Lazy load the heavy views
+const Dashboard = lazy(() => import("./components/Dashboard"));
+const StudyAssistant = lazy(() => import("./components/StudyAssistant"));
+const SubjectManager = lazy(() => import("./components/SubjectManager"));
 import { isToday } from "./utils/helpers";
 import { initGA, trackPage } from "./utils/analytics";
 
@@ -180,7 +182,13 @@ export default function App() {
             {pomodoroOpen ? "Hide Timer" : "Set Timer"}
           </button>
         </div>
-        <div className="main-inner">{renderMain()}</div>
+        <div className="main-inner">
+          <Suspense
+            fallback={<div className="loading-spinner">Loading...</div>}
+          >
+            {renderMain()}
+          </Suspense>
+        </div>
       </main>
 
       <aside className={`right-panel ${pomodoroOpen ? "pomo-sheet-open" : ""}`}>
